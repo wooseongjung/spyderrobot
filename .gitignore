@@ -1,0 +1,63 @@
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editors / IDEs ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Python (Pi-side telemetry / camera scripts) ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# ---- KiCad (PCB) ----
+*-backups/
+*.bak
+*.bck
+*.kicad_pcb-bak
+*.sch-bak
+*.000
+*.lck
+fp-info-cache
+_autosave-*
+
+# ---- KiCad outputs to keep manually-curated only ----
+# (Comment these out if you DO want to commit gerbers/BOM)
+# *.gbr
+# *.drl
+
+# ---- STM32CubeIDE / STM32CubeMX ----
+Debug/
+Release/
+build/
+.metadata/
+.settings/
+.cproject
+.project
+*.launch
+
+# ---- PlatformIO ----
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# ---- ROS / catkin (the existing spider/ package may produce these) ----
+build/
+devel/
+install/
+log/
+*.pyc
+
+# ---- Logs ----
+*.log
+!spider/export.log
