@@ -1,0 +1,24 @@
+# Phase 1 telemetry logger config
+
+rate_hz: 5                       # logger loop rate
+output_csv: sample_data/run.csv  # relative to pi/telemetry/
+
+sensors:
+  imu:
+    enabled: true
+    bus: 1
+    address: 0x68
+  env:
+    enabled: true
+    pin: 4
+  distance:
+    enabled: true
+    trig_pin: 23
+    echo_pin: 24       # via voltage divider!
+  wetness:
+    enabled: true
+    do_pin: 17
+
+display:
+  enabled: false       # set true once OLED is wired
+  i2c_address: 0x3C
