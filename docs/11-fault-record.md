@@ -59,3 +59,59 @@ Before assuming a remote resource is missing, verify visibility. `gh repo view` 
 ---
 
 > Real entries start below this line. Newest first.
+
+## 2026-04-09 — pi/telemetry: OLED showed "T 59.0C  H --%" in a 24 C / 62 %RH room
+
+**Symptom:**
+After wiring the SSD1306 into the Phase 1 logger, the OLED rendered
+temperature as `59.0 C` and humidity as `--%`. The MPU6050 accel lines
+were correct. The stdout debug line showed matching nonsense
+(`env=59.0/None`).
+
+**Context:**
+Branch `feat/pi-oled-display-stacked`, stacked on
+`feat/pi-imu-env-drivers` (PR #4). Phase 1 Step 6. DHT11 had already
+been verified returning ~24 C / 62 %RH via direct driver prints in the
+same session, so the sensor and driver were known good.
+
+**Investigation:**
+1. Suspected the DHT11 driver was returning a partial `EnvReading`
+   (temp set, rh None). Re-read `sensors/dht11.py` — `read()` correctly
+   returns `None` whenever either field is `None`, so a partial reading
+   can't reach the logger row.
+2. Suspected stale cached values from `adafruit_circuitpython_dht`
+   between the two separate `.temperature` / `.humidity` property
+   accesses. The library's `measure()` serves both from the same
+   packet, so this was a dead end.
+3. Re-read the CSV header in `logger.open_csv` and counted columns.
+   Row layout is:
+   `[0] iso_ts, [1] t_ms, [2..4] ax/ay/az, [5..7] gx/gy/gz,
+    [8] imu_temp_c, [9] env_temp_c, [10] env_rh, [11] dist_mm, ...`
+4. Checked the debug print and the OLED `show()` call in `logger.main`
+   — both were reading `row[10]` as temperature and `row[11]` as
+   humidity. `59.0` was humidity in %, and the "humidity" slot was
+   pulling `dist_mm`, which is `None` because the HC-SR04 is disabled
+   in `config.yaml` (deferred to Phase 2).
+
+**Root cause:**
+Off-by-one on the CSV column indices. The logger's own pre-existing
+debug print was also wrong (`row[10]/row[11]`) and I copied that
+mistake straight into the OLED call, which is why the mislabelling
+survived earlier "first light" verification — the stdout line looked
+self-consistent with the OLED.
+
+**Fix:**
+Use `row[9]` for `temp_c` and `row[10]` for `rh` in both the stdout
+print and the `display.show()` dict. Also tagged the stdout units
+(`env=24.6C/62%`) so a future units mix-up would be obvious at a
+glance. Commit `20b44a1` on `feat/pi-oled-display-stacked`.
+
+**Lesson:**
+- Don't trust an existing debug print as an oracle when you're writing
+  new code that reads the same data structure. Derive the indices from
+  the source of truth (the CSV header in `open_csv`), not from a line
+  that happened to look reasonable in the terminal.
+- A room-temperature reading of "59 C" should have been treated as an
+  obvious impossibility from the first glance, not rationalised as a
+  "DHT11 first-read quirk" (which is how I initially mislabelled it in
+  the drivers PR). Sanity-check units before blaming the sensor.

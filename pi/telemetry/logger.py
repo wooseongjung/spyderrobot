@@ -23,6 +23,7 @@ from pathlib import Path
 
 import yaml
 
+from display import OledDisplay
 from sensors.dht11 import DHT11
 from sensors.hcsr04 import HCSR04
 from sensors.mpu6050 import MPU6050
@@ -66,7 +67,14 @@ def main() -> int:
     dist = HCSR04()   if sensor_cfg.get("distance", {}).get("enabled", True) else None
     wet  = Raindrop() if sensor_cfg.get("wetness",  {}).get("enabled", True) else None
 
-    for s in (imu, env, dist, wet):
+    display_cfg = cfg.get("display", {})
+    display = (
+        OledDisplay(address=int(display_cfg.get("i2c_address", 0x3C)))
+        if display_cfg.get("enabled", False)
+        else None
+    )
+
+    for s in (imu, env, dist, wet, display):
         if s is None:
             continue
         try:
@@ -112,14 +120,23 @@ def main() -> int:
             writer.writerow(row)
             f.flush()
 
-            print(f"[{iso_ts}] env={row[10]}/{row[11]} ax={row[2]} ay={row[3]} az={row[4]}")
+            print(f"[{iso_ts}] env={row[9]}C/{row[10]}% ax={row[2]} ay={row[3]} az={row[4]}")
+
+            if display is not None:
+                try:
+                    display.show({
+                        "ax": row[2], "ay": row[3], "az": row[4],
+                        "temp_c": row[9], "rh": row[10],
+                    })
+                except Exception as e:
+                    print(f"[display] {e}", file=sys.stderr)
 
             sleep_s = period_s - (time.monotonic() - cycle_start)
             if sleep_s > 0:
                 time.sleep(sleep_s)
     finally:
         f.close()
-        for s in (imu, env, dist, wet):
+        for s in (imu, env, dist, wet, display):
             if s is None:
                 continue
             try:

@@ -26,27 +26,54 @@ class OledDisplay:
         self._font = None
 
     def open(self) -> None:
-        # TODO: on the Pi:
-        #   import board, busio
-        #   import adafruit_ssd1306
-        #   from PIL import Image, ImageDraw, ImageFont
-        #   i2c = busio.I2C(board.SCL, board.SDA)
-        #   self._oled = adafruit_ssd1306.SSD1306_I2C(self.width, self.height, i2c, addr=self.address)
-        #   self._oled.fill(0); self._oled.show()
-        #   self._font = ImageFont.load_default()
-        raise NotImplementedError("TODO: implement on-Pi")
+        import board  # lazy imports so this module lints off-Pi
+        import busio
+        import adafruit_ssd1306
+        from PIL import Image, ImageDraw, ImageFont
+
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self._oled = adafruit_ssd1306.SSD1306_I2C(
+            self.width, self.height, i2c, addr=self.address
+        )
+        self._oled.fill(0)
+        self._oled.show()
+        self._font = ImageFont.load_default()
+        self._image_cls = Image
+        self._draw_cls = ImageDraw
 
     def show(self, fields: dict) -> None:
         """Render a small status screen.
 
-        Layout (TODO: tune once on hardware):
-            line 1:  dist 432 mm
-            line 2:  temp 21.4 C
-            line 3:  rh   42 %
-            line 4:  wet  N
+        Expected keys (all optional; missing values render as '--'):
+            ax, ay, az        accel in g
+            temp_c, rh        DHT11 environment
         """
-        # TODO: build a PIL image, draw text, push to self._oled.image() and show()
-        raise NotImplementedError("TODO: implement on-Pi")
+        if self._oled is None:
+            return
+
+        image = self._image_cls.new("1", (self.width, self.height))
+        draw = self._draw_cls.Draw(image)
+
+        def fmt(v, spec):
+            return format(v, spec) if isinstance(v, (int, float)) else "--"
+
+        line_ax = f"ax {fmt(fields.get('ax'), '+.2f')}g"
+        line_ay = f"ay {fmt(fields.get('ay'), '+.2f')}g"
+        line_az = f"az {fmt(fields.get('az'), '+.2f')}g"
+        line_env = (
+            f"T {fmt(fields.get('temp_c'), '4.1f')}C  "
+            f"H {fmt(fields.get('rh'), '>3')}%"
+        )
+
+        # Default PIL font is ~6x11; four lines fit comfortably in 64 px.
+        draw.text((0,  0),  "spyderrobot P1",        font=self._font, fill=255)
+        draw.text((0, 14),  line_ax,                 font=self._font, fill=255)
+        draw.text((0, 26),  line_ay,                 font=self._font, fill=255)
+        draw.text((0, 38),  line_az,                 font=self._font, fill=255)
+        draw.text((0, 52),  line_env,                font=self._font, fill=255)
+
+        self._oled.image(image)
+        self._oled.show()
 
     def close(self) -> None:
         if self._oled is not None:
