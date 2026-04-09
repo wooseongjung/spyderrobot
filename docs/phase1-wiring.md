@@ -201,6 +201,32 @@ Now you have a real reading. Repeat for DHT11. When both are returning real data
 
 ---
 
+## Using the NI myDAQ as your bench instrument
+
+An NI myDAQ replaces the handheld meter and scope for everything in this doc. Useful tricks:
+
+### Pre-power continuity & rail checks (DMM mode)
+
+- **3V3 vs GND short test:** myDAQ DMM → continuity mode → probe red rail and blue rail with **everything unpowered and the Pi unplugged**. Should NOT beep. If it beeps, you have a short — stop, find it.
+- **Module power verification:** DMM → DC voltage → probe the VCC pin on each module (MPU6050, OLED, DHT11) with reference to the blue rail. Should read ~3.30 V ± 0.05 V with the Pi powered. If it reads 0 V, your power jumper is broken or in the wrong hole. If it reads ~5 V, **immediately unplug the Pi** — you wired to pin 2 or 4 instead of pin 1.
+- **Jumper continuity:** before trusting a jumper wire, DMM continuity-check end to end. Cheap kit wires fail surprisingly often.
+
+### If `i2cdetect -y 1` shows nothing or ghost addresses (Scope mode)
+
+- Put the myDAQ into scope mode, probe SDA and SCL against GND.
+- Run a read in a second terminal: `i2cdetect -y 1`
+- You should see clean ~100 kHz bursts on both lines when i2cdetect walks addresses.
+- **No activity at all** → Pi I²C peripheral isn't enabled, or SDA/SCL jumpers are swapped / off.
+- **SDA or SCL stuck high/low** → a module is holding the line, or you have a short to 3V3/GND.
+- **Slow rise times (rounded edges)** → insufficient pull-up; rare, since both modules have built-ins, but possible if your jumpers are long.
+- **Garbled / non-square signal** → bus contention, likely two modules fighting. Disconnect one and re-test.
+
+### Powering a bench rig without the Pi
+
+The myDAQ has a +5 V and ±15 V supply on its screw terminals. For sensor bench-testing **before** you trust your wiring with the Pi, you can power the module off the myDAQ's +5 V (through a simple 3.3 V LDO or just use the MPU6050/OLED's built-in regulators which accept 3–5 V on most breakouts). This lets you verify the sensor responds before you put the Pi's life on the line.
+
+---
+
 ## Troubleshooting cheat sheet
 
 | Symptom | Likely cause | Fix |
