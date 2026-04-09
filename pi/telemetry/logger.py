@@ -120,13 +120,13 @@ def main() -> int:
             writer.writerow(row)
             f.flush()
 
-            print(f"[{iso_ts}] env={row[10]}/{row[11]} ax={row[2]} ay={row[3]} az={row[4]}")
+            print(f"[{iso_ts}] env={row[9]}C/{row[10]}% ax={row[2]} ay={row[3]} az={row[4]}")
 
             if display is not None:
                 try:
                     display.show({
                         "ax": row[2], "ay": row[3], "az": row[4],
-                        "temp_c": row[10], "rh": row[11],
+                        "temp_c": row[9], "rh": row[10],
                     })
                 except Exception as e:
                     print(f"[display] {e}", file=sys.stderr)
