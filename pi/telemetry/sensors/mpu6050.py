@@ -43,20 +43,30 @@ class MPU6050:
 
     def open(self) -> None:
         """Open the I2C bus and wake the device."""
-        # TODO: import smbus2 lazily so this module can be linted off-Pi
-        # from smbus2 import SMBus
-        # self._bus = SMBus(self.bus_id)
-        # self._bus.write_byte_data(self.address, PWR_MGMT_1, 0x00)  # wake
-        raise NotImplementedError("TODO: implement on-Pi")
+        from smbus2 import SMBus  # lazy import so the module lints off-Pi
+        self._bus = SMBus(self.bus_id)
+        # Clear SLEEP bit in PWR_MGMT_1 so the device starts sampling.
+        self._bus.write_byte_data(self.address, PWR_MGMT_1, 0x00)
 
     def read(self) -> Optional[ImuReading]:
         """Read accel + gyro + temp. Returns None on bus error."""
-        # TODO:
-        #   raw = self._bus.read_i2c_block_data(self.address, ACCEL_XOUT_H, 14)
-        #   ax = _to_int16(raw[0], raw[1]) / ACCEL_SCALE
-        #   ... etc.
-        #   return ImuReading((ax, ay, az), (gx, gy, gz), temp_c)
-        raise NotImplementedError("TODO: implement on-Pi")
+        if self._bus is None:
+            return None
+        try:
+            raw = self._bus.read_i2c_block_data(self.address, ACCEL_XOUT_H, 14)
+        except OSError:
+            self.error_count += 1
+            return None
+
+        ax = _to_int16(raw[0],  raw[1])  / ACCEL_SCALE
+        ay = _to_int16(raw[2],  raw[3])  / ACCEL_SCALE
+        az = _to_int16(raw[4],  raw[5])  / ACCEL_SCALE
+        temp_raw = _to_int16(raw[6], raw[7])
+        temp_c = temp_raw / 340.0 + 36.53  # per MPU6050 datasheet
+        gx = _to_int16(raw[8],  raw[9])  / GYRO_SCALE
+        gy = _to_int16(raw[10], raw[11]) / GYRO_SCALE
+        gz = _to_int16(raw[12], raw[13]) / GYRO_SCALE
+        return ImuReading((ax, ay, az), (gx, gy, gz), temp_c)
 
     def close(self) -> None:
         if self._bus is not None:

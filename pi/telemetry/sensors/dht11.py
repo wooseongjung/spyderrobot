@@ -31,22 +31,26 @@ class DHT11:
         self.error_count = 0
 
     def open(self) -> None:
-        # TODO: on the Pi:
-        #   import board, adafruit_dht
-        #   self._device = adafruit_dht.DHT11(getattr(board, f"D{self.pin}"))
-        raise NotImplementedError("TODO: implement on-Pi")
+        import board  # lazy import so the module lints off-Pi
+        import adafruit_dht
+        self._device = adafruit_dht.DHT11(getattr(board, f"D{self.pin}"))
 
     def read(self) -> Optional[EnvReading]:
         """Read temperature and humidity. Returns None on a checksum miss
         (DHT11 misses are common; the caller should retry rather than
         treat one None as a hard failure)."""
-        # TODO:
-        #   try:
-        #       return EnvReading(self._device.temperature, self._device.humidity)
-        #   except RuntimeError:
-        #       self.error_count += 1
-        #       return None
-        raise NotImplementedError("TODO: implement on-Pi")
+        if self._device is None:
+            return None
+        try:
+            t = self._device.temperature
+            rh = self._device.humidity
+        except RuntimeError:
+            self.error_count += 1
+            return None
+        if t is None or rh is None:
+            self.error_count += 1
+            return None
+        return EnvReading(t, rh)
 
     def close(self) -> None:
         if self._device is not None:
