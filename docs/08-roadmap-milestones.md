@@ -18,11 +18,11 @@ Each phase has a clear **deliverable** and **exit criterion**. A phase is "done"
 **Wiring cheat sheet:** [`phase1-wiring.md`](phase1-wiring.md)
 **Deliverable:** Pi 5 reads MPU6050 + DHT11 directly via Python, logs to CSV, OLED shows live values.
 **Exit criterion:**
-- [ ] MPU6050 and DHT11 return plausible values for ≥ 30 min uninterrupted
-- [ ] CSV log committed under `pi/telemetry/sample_data/`
-- [ ] OLED displays IMU (e.g., tilt) + temp + humidity
-- [ ] Photo of breadboard rig in `assets/images/`
-- [ ] Notes added to `docs/11-fault-record.md` for any issues encountered
+- [x] MPU6050 and DHT11 return plausible values end-to-end (gravity magnitude within 1 % of 1 g; env readings match a room thermometer). **30-min endurance run waived** — see [ADR-0005](10-design-decisions.md#adr-0005--waive-phase-1-30-minute-endurance-criterion) — the endurance test is relocated to Phase 5 (integration on chassis) and Phase 7 (field test) where it carries more signal.
+- [x] CSV log committed under `pi/telemetry/sample_data/`
+- [x] OLED displays IMU + env temp + env humidity (see `pi/telemetry/display.py`)
+- [x] Photo of breadboard rig in `assets/images/phase1-breadboard.jpg`
+- [x] Notes added to `docs/11-fault-record.md` (OLED column off-by-one entry, 2026-04-09)
 
 ## Phase 2 — MCU firmware on STM32 dev board
 **Goal:** Move the sensor frontend off the Pi and onto a real MCU, with a framed UART link.

@@ -54,6 +54,22 @@ The goal is to remember **why** something was chosen so future-me can revisit ch
 
 ---
 
+## ADR-0005 — Waive Phase 1 30-minute endurance criterion
+**Date:** 2026-04-09
+**Decision:** Remove the "≥ 30 min uninterrupted" endurance requirement from the Phase 1 exit criterion. Phase 1 is closed on functional correctness alone — the drivers return plausible values, the OLED renders the live readings, the fault log has been exercised, and a representative CSV slice is committed.
+**Context:** The original Phase 1 exit list inherited a "30-minute uninterrupted run" item from a generic bring-up checklist. On reflection, that criterion is the wrong thing to verify at this stage: Phase 1 is a one-evening bench proof-of-concept on a breadboard with jumper-wire connections. A 30-minute run on that rig proves nothing that isn't already evident from the first few minutes, because the failure modes an endurance test is meant to catch (thermal drift on a PCB, connector vibration, power-supply sag under sustained load, memory leaks in long-running firmware) are not present in a desktop breadboard session.
+**Alternatives:**
+1. Keep the criterion and run it on the current breadboard → low-signal, delays Phase 1 close for no real learning.
+2. Move the criterion to a later phase where it is actually meaningful (chosen).
+3. Remove endurance testing from the project entirely → wrong; endurance matters once the robot walks.
+**Rationale:** Endurance testing is relocated to where it carries signal:
+- **Phase 5** (integration on chassis) — run the full telemetry stack for ≥ 30 min while the robot moves under joystick control. Catches loose connectors, power-rail sag under servo current draw, and cable fatigue.
+- **Phase 7** (field test) — the deployment-representative endurance run, ≥ 1 session, logged end-to-end.
+
+Phase 1 already has a real failure mode documented: the OLED column off-by-one (see `docs/11-fault-record.md`, 2026-04-09 entry), which an endurance run would **not** have caught anyway — it was caught by visual sanity-checking the first few seconds of OLED output.
+
+---
+
 ## Template for new entries
 
 ```

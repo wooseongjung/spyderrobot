@@ -12,8 +12,8 @@ The robot is the carrier; the engineering deliverable is a **custom MCU-based se
 
 | Phase | Description | Status |
 |---|---|---|
-| 0 | Repo restructure & documentation | in progress |
-| 1 | Breadboard prototype (sensors on Pi only) | pending |
+| 0 | Repo restructure & documentation | **done** |
+| 1 | Breadboard prototype (IMU + env + OLED on Pi) | **done** |
 | 2 | MCU firmware on STM32 dev board | pending |
 | 3 | Custom PCB design (KiCad) | pending |
 | 4 | PCB fabrication & bring-up | pending |
@@ -22,6 +22,12 @@ The robot is the carrier; the engineering deliverable is a **custom MCU-based se
 | 7 | Field test & write-up | pending |
 
 Detailed milestones with deliverables and exit criteria: see [`docs/08-roadmap-milestones.md`](docs/08-roadmap-milestones.md).
+
+### Phase 1 first light
+
+![Phase 1 breadboard rig: Pi 5, MPU6050, DHT11, SSD1306 OLED showing live telemetry](assets/images/phase1-breadboard.jpg)
+
+The SSD1306 is held in frame rendering `spyderrobot P1` + live accelerometer values + environmental temperature / humidity from the logger. Wiring cheat sheet: [`docs/phase1-wiring.md`](docs/phase1-wiring.md). The off-by-one bug in the logger's CSV-column indexing that this rig exposed is documented in [`docs/11-fault-record.md`](docs/11-fault-record.md).
 
 ---
 
