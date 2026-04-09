@@ -1,6 +1,10 @@
 # pi/telemetry/
 
-Phase 1 telemetry stack: read every prototype sensor directly from the Pi 5, log to CSV, optionally show on the OLED. Phase 2 will replace the per-sensor reads with a UART parser for the custom MCU board.
+Phase 1 telemetry stack: read **MPU6050 (IMU)** and **DHT11 (temp/humidity)** directly from the Pi 5, log to CSV, show on the **SSD1306 OLED**. Phase 2 will replace the per-sensor reads with a UART parser for the custom MCU board.
+
+> **Wiring cheat sheet:** [`../../docs/phase1-wiring.md`](../../docs/phase1-wiring.md) — keep it open while wiring.
+
+> **Deferred to Phase 2 (STM32):** HC-SR04 ultrasonic (needs 5 V → 3.3 V level shift on ECHO) and the raindrop sensor (needs an ADC). Their driver scaffolds remain in `sensors/` but are disabled in `config.yaml`.
 
 ## Current layout
 
@@ -46,10 +50,9 @@ python -m logger
 
 ## Bring-up order (recommended)
 
-1. **MPU6050** first — I2C is the cleanest path. Verify with `i2cdetect`, then implement `MPU6050.open()` / `read()`.
-2. **HC-SR04** second — uses `gpiozero.DistanceSensor`. *Voltage-divide the ECHO line; do not connect 5 V logic to a GPIO directly.*
-3. **Raindrop** third — single GPIO read; trivial once wiring is right.
-4. **DHT11** last — known to be flaky on Pi 5; if it fights you, skip and rely on the planned BME280 upgrade.
+1. **MPU6050** first — I²C is the cleanest path. Verify with `i2cdetect -y 1` (expect `0x68`), then implement `MPU6050.open()` / `read()` in `sensors/mpu6050.py`.
+2. **OLED** next — same I²C bus (`0x3C`). Implement `display.py`. Showing live IMU values on the OLED is a satisfying first milestone.
+3. **DHT11** last — known to be flaky on Pi 5. Use `adafruit-circuitpython-dht`, not the legacy `RPi.GPIO` driver. If misses are frequent, that's normal — the logger retries on the next loop.
 
 After each sensor: rerun `python -m logger` and confirm its column in `sample_data/run.csv` is no longer `None`.
 
@@ -57,17 +60,17 @@ After each sensor: rerun `python -m logger` and confirm its column in `sample_da
 
 | Sensor | Pi 5 pins | Notes |
 |---|---|---|
-| MPU6050 | 3V3, GND, GPIO2 (SDA), GPIO3 (SCL) | shares I2C1 with OLED |
-| DHT11 | 3V3, GND, GPIO4 (DATA) | 10 kΩ pull-up DATA → 3V3 |
-| HC-SR04 | 5 V, GND, GPIO23 (TRIG), GPIO24 (ECHO) | **divide ECHO to 3.3 V** |
-| Raindrop | 3V3, GND, GPIO17 (DO) | DO is active-low when wet |
-| OLED | 3V3, GND, GPIO2 (SDA), GPIO3 (SCL) | shares I2C1 with MPU6050 |
+| MPU6050 | 3V3 (pin 1), GND (pin 6), GPIO2 SDA (pin 3), GPIO3 SCL (pin 5) | shares I²C1 with OLED, address `0x68` |
+| OLED SSD1306 | 3V3, GND, GPIO2 SDA, GPIO3 SCL | shares I²C1 with MPU6050, address `0x3C` |
+| DHT11 (3-pin module) | 3V3, GND, GPIO4 (pin 7) | 4-pin variant needs a 10 kΩ pull-up DATA → 3V3 |
+
+Full step-by-step: [`../../docs/phase1-wiring.md`](../../docs/phase1-wiring.md).
 
 ## Phase 1 exit criterion (from `docs/08-roadmap-milestones.md`)
 
-- [ ] Each sensor returns plausible values for ≥ 30 min uninterrupted
+- [ ] MPU6050 and DHT11 return plausible values for ≥ 30 min uninterrupted
 - [ ] CSV log committed under `sample_data/`
-- [ ] OLED displays at least temp, humidity, distance
+- [ ] OLED displays IMU + temp + humidity
 - [ ] Photo of breadboard rig in `assets/images/`
 
 ## Looking ahead (Phase 2)

@@ -59,13 +59,16 @@ def main() -> int:
     cfg = load_config()
     period_s = 1.0 / cfg.get("rate_hz", 5)
     out_path = Path(cfg.get("output_csv", "sample_data/run.csv"))
+    sensor_cfg = cfg.get("sensors", {})
 
-    imu  = MPU6050()
-    env  = DHT11()
-    dist = HCSR04()
-    wet  = Raindrop()
+    imu  = MPU6050()  if sensor_cfg.get("imu",      {}).get("enabled", True) else None
+    env  = DHT11()    if sensor_cfg.get("env",      {}).get("enabled", True) else None
+    dist = HCSR04()   if sensor_cfg.get("distance", {}).get("enabled", True) else None
+    wet  = Raindrop() if sensor_cfg.get("wetness",  {}).get("enabled", True) else None
 
     for s in (imu, env, dist, wet):
+        if s is None:
+            continue
         try:
             s.open()
         except NotImplementedError as e:
@@ -87,10 +90,10 @@ def main() -> int:
             t_ms = int((cycle_start - t0) * 1000)
             iso_ts = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
-            imu_r  = _safe_read(imu)
-            env_r  = _safe_read(env)
-            dist_r = _safe_read(dist)
-            wet_r  = _safe_read(wet)
+            imu_r  = _safe_read(imu)  if imu  else None
+            env_r  = _safe_read(env)  if env  else None
+            dist_r = _safe_read(dist) if dist else None
+            wet_r  = _safe_read(wet)  if wet  else None
 
             row = [
                 iso_ts, t_ms,
@@ -101,12 +104,15 @@ def main() -> int:
                 env_r.rh if env_r else None,
                 dist_r.distance_mm if dist_r else None,
                 int(wet_r.wet) if wet_r else None,
-                imu.error_count, env.error_count, dist.error_count, wet.error_count,
+                imu.error_count  if imu  else 0,
+                env.error_count  if env  else 0,
+                dist.error_count if dist else 0,
+                wet.error_count  if wet  else 0,
             ]
             writer.writerow(row)
             f.flush()
 
-            print(f"[{iso_ts}] dist={row[12]} wet={row[13]} env={row[10]}/{row[11]}")
+            print(f"[{iso_ts}] env={row[10]}/{row[11]} ax={row[2]} ay={row[3]} az={row[4]}")
 
             sleep_s = period_s - (time.monotonic() - cycle_start)
             if sleep_s > 0:
@@ -114,6 +120,8 @@ def main() -> int:
     finally:
         f.close()
         for s in (imu, env, dist, wet):
+            if s is None:
+                continue
             try:
                 s.close()
             except Exception:
