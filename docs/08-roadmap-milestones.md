@@ -11,13 +11,16 @@ Each phase has a clear **deliverable** and **exit criterion**. A phase is "done"
 - [ ] `spider/` ROS package untouched (verified by `git diff main -- spider/` → empty)
 - [ ] Branch merged to `main`
 
-## Phase 1 — Breadboard prototype (sensors on Pi only)
-**Goal:** Prove every sensor works individually, on the Pi, before introducing the MCU.
-**Deliverable:** Pi 5 reads DHT11, raindrop, HC-SR04, MPU6050 directly via Python; logs to CSV; OLED shows live values.
+## Phase 1 — Breadboard prototype (Pi-only, IMU + env + display)
+**Goal:** Prove the I²C path and a non-trivial sensor work end-to-end on the Pi before introducing the MCU.
+**In scope:** MPU6050 (IMU, I²C), DHT11 (temp/humidity, 1-wire), SSD1306 OLED (I²C, shares the bus with the MPU6050).
+**Out of scope (deferred to Phase 2 / STM32):** HC-SR04 ultrasonic (needs 5 V → 3.3 V level shift on ECHO) and the raindrop sensor (needs an ADC). Their driver scaffolds remain in `pi/telemetry/sensors/` but are disabled in `config.yaml`.
+**Wiring cheat sheet:** [`phase1-wiring.md`](phase1-wiring.md)
+**Deliverable:** Pi 5 reads MPU6050 + DHT11 directly via Python, logs to CSV, OLED shows live values.
 **Exit criterion:**
-- [ ] Each sensor returns plausible values for ≥ 30 min uninterrupted
+- [ ] MPU6050 and DHT11 return plausible values for ≥ 30 min uninterrupted
 - [ ] CSV log committed under `pi/telemetry/sample_data/`
-- [ ] OLED displays at least temp, humidity, distance
+- [ ] OLED displays IMU (e.g., tilt) + temp + humidity
 - [ ] Photo of breadboard rig in `assets/images/`
 - [ ] Notes added to `docs/11-fault-record.md` for any issues encountered
 

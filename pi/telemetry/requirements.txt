@@ -1,0 +1,15 @@
+# Phase 1 prototype dependencies (run on Raspberry Pi 5, Bookworm)
+#
+# Install on the Pi:
+#   python -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r requirements.txt
+
+PyYAML>=6.0
+gpiozero>=2.0
+smbus2>=0.4.3
+adafruit-circuitpython-dht>=4.0
+adafruit-blinka>=8.0
+# OLED (uncomment when wiring it up)
+# adafruit-circuitpython-ssd1306>=2.12
+# Pillow>=10.0
