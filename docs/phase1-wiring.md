@@ -10,9 +10,8 @@ Keep this open while wiring. Three devices, one shared I²C bus, one GPIO. Total
 | **DHT11** (temp/humidity) | YES | 1-wire, 3.3 V |
 | **SSD1306 OLED 0.96"** | YES | I²C, 3.3 V, shares bus with MPU6050 |
 | ~~HC-SR04 ultrasonic~~ | **NO** — deferred | level-shifting hassle, deferred to STM32 |
-| ~~Raindrop sensor~~ | **NO** — deferred | needs an ADC; deferred to STM32 |
 
-The two deferred sensors stay as scaffold files in `pi/telemetry/sensors/` — disabled in `config.yaml`, ready to enable later.
+The deferred sensor stays as a scaffold file in `pi/telemetry/sensors/` — disabled in `config.yaml`, ready to enable later. The raindrop sensor was removed entirely from project scope (see ADR-0006).
 
 ---
 
@@ -186,7 +185,7 @@ python -m logger
 Expected output for a fresh Pi with sensors wired but drivers not yet implemented:
 
 ```
-[2026-04-09T15:23:01.123+00:00] dist=None wet=None env=None/None
+[2026-04-09T15:23:01.123+00:00] env=None C/None% ax=None ay=None az=None
 ```
 
 (All `None` because the driver bodies are still `TODO`. The logger runs end-to-end. Good.)
@@ -194,7 +193,7 @@ Expected output for a fresh Pi with sensors wired but drivers not yet implemente
 Then implement `MPU6050.open()` and `read()` in `pi/telemetry/sensors/mpu6050.py` and rerun:
 
 ```
-[2026-04-09T15:24:11.456+00:00] dist=None wet=None env=None/None  ax=0.02 ay=-0.01 az=0.99
+[2026-04-09T15:24:11.456+00:00] env=None C/None% ax=0.02 ay=-0.01 az=0.99
 ```
 
 Now you have a real reading. Repeat for DHT11. When both are returning real data, Phase 1 is functionally complete.

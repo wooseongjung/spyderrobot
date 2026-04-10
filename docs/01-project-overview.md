@@ -11,7 +11,7 @@ Many environmental and infrastructure inspection tasks require getting a sensor 
 A single operator deploys the robot into a target area. The robot:
 
 1. Walks under operator control (or following a simple path).
-2. Continuously samples local **temperature, humidity, distance to obstacles, surface wetness**.
+2. Continuously samples local **temperature, humidity, distance to obstacles**.
 3. Continuously monitors its own **tilt, shock, vibration, battery voltage and current draw**.
 4. Captures camera frames on demand (Pi AI Camera).
 5. Streams everything back to the operator's screen and logs to disk.

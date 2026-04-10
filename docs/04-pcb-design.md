@@ -40,9 +40,8 @@ Custom MCU board specification. This is the **main engineering deliverable** of 
 - Test points on 5 V, 3.3 V, GND
 
 ### C. Sensor block
-- IMU footprint: MPU6050 / MPU9250 / ICM-20948 (I²C)
+- IMU footprint: **MPU9250** (I²C, v1 end-product part; 9-DoF adds magnetometer for heading). MPU6050 is the Phase 1 bench prototype only and is **not** designed onto the v1 PCB.
 - BME280 / SHT31 footprint (I²C)
-- Header for raindrop sensor (analog + digital)
 - Header for HC-SR04 (5 V, GND, TRIG, ECHO with level shift to 3.3 V)
 - Optional BME680 footprint (I²C, future air-quality upgrade)
 - Optional ToF sensor (VL53L1X) footprint
@@ -69,8 +68,7 @@ Custom MCU board specification. This is the **main engineering deliverable** of 
 | UART1 (Pi link) | 2 | TX, RX |
 | HC-SR04 trigger | 1 | GPIO out |
 | HC-SR04 echo | 1 | timer input capture, level-shifted |
-| Raindrop analog | 1 | ADC channel |
-| Raindrop digital | 1 | GPIO in |
+| Discrete analog showcase | 2 | ADC channels reserved for the op-amp current-sense block (see ADR-0008) |
 | Status LEDs | 3 | GPIO out |
 | Boot button | 1 | GPIO in |
 | SWD | 4 | dedicated |

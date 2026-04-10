@@ -14,19 +14,18 @@ Two-column BOM: what's used in the **breadboard prototype** vs. what's planned f
 
 ## Environmental sensing
 
-| Item | Prototype | Target v2 | Notes |
+| Item | Phase 1 prototype | v1 end product | Notes |
 |---|---|---|---|
 | Temp / humidity | DHT11 | BME280 or SHT31 | DHT11 is too coarse for the final build |
-| Wetness / rain | Generic raindrop module | (kept) | analog + digital output |
 | Distance | HC-SR04 ultrasonic | (kept) | considering ToF (VL53L1X) as stretch |
 | Air quality / VOC | — | BME680 | optional, Phase 8 |
 
 ## Robot-state sensing
 
-| Item | Prototype | Target v2 | Notes |
+| Item | Phase 1 prototype | v1 end product | Notes |
 |---|---|---|---|
-| IMU | MPU6050 | MPU9250 | 9-DoF for heading |
-| Power monitor | — | INA226 | I²C, current shunt + bus voltage |
+| IMU | MPU6050 (6-DoF, prototype only) | **MPU9250** (9-DoF, v1 custom PCB) | MPU9250 adds magnetometer for heading hold. MPU6050 stays as the bench/prototype reference only — the v1 PCB is designed around MPU9250. |
+| Power monitor | — | INA226 (+ discrete showcase block) | I²C monitor for production path; parallel discrete op-amp + shunt block as the analog-design showcase (see `docs/04-pcb-design.md` and ADR-0008). |
 | Battery fuel gauge | — | TODO | optional |
 
 ## User / operator interface

@@ -11,7 +11,7 @@ Default I2C address: 0x3C.
 Use as a sink for the latest reading from logger.py:
     display = OledDisplay()
     display.open()
-    display.show({"dist_mm": 432, "wet": 0, "temp_c": 21.4})
+    display.show({"dist_mm": 432, "temp_c": 21.4, "rh": 42})
 """
 
 from typing import Optional
@@ -85,4 +85,4 @@ class OledDisplay:
 if __name__ == "__main__":
     d = OledDisplay()
     d.open()
-    d.show({"dist_mm": 432, "wet": 0, "temp_c": 21.4, "rh": 42})
+    d.show({"dist_mm": 432, "temp_c": 21.4, "rh": 42})

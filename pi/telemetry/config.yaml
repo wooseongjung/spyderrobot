@@ -15,9 +15,6 @@ sensors:
     enabled: false     # deferred: ECHO needs voltage divider, moved to STM32 (Phase 2)
     trig_pin: 23
     echo_pin: 24
-  wetness:
-    enabled: false     # deferred: needs an ADC for analog read, moved to STM32 (Phase 2)
-    do_pin: 17
 
 display:
   enabled: true        # SSD1306 0.96" OLED on the same I2C bus as the MPU6050

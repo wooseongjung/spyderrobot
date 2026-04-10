@@ -20,8 +20,8 @@ Firmware that runs on the custom MCU board. Targets STM32 G4 / F4, written in C,
 |  - safety / watchdog policies                   |
 +-------------------------------------------------+
 |                Sensor drivers                   |
-|  - imu_mpu6050.c   - bme280.c   - ina226.c      |
-|  - hcsr04.c        - raindrop.c                 |
+|  - imu_mpu9250.c   - bme280.c   - ina226.c      |
+|  - hcsr04.c        - analog_showcase.c          |
 +-------------------------------------------------+
 |                 Bus & I/O HAL                   |
 |  - i2c_bus.c       - uart_link.c   - adc.c      |
@@ -41,8 +41,8 @@ Firmware that runs on the custom MCU board. Targets STM32 G4 / F4, written in C,
 | IMU read + filter | 100 Hz | tilt / shock detection |
 | Environmental read | 1 Hz | DHT11 / BME280 |
 | Ultrasonic ping | 10 Hz | one trigger, capture echo via timer |
-| Raindrop ADC | 5 Hz | smoothing window |
 | Power monitor | 10 Hz | INA226 shunt + bus voltage |
+| Discrete analog showcase ADC | 10 Hz | discrete op-amp current-sense block, parallel to INA226 (ADR-0008) |
 | Telemetry frame TX | 10 Hz | bundles latest values |
 | Watchdog kick | 10 Hz | only if all critical tasks ran |
 
@@ -68,12 +68,12 @@ Payload v1 (TODO: lock down once sensors are wired):
 | 6 | temp_c | i16 | × 100 |
 | 8 | rh | u16 | × 100 |
 | 10 | dist_mm | u16 | HC-SR04 |
-| 12 | wet_raw | u16 | raindrop ADC |
-| 14 | accel[3] | i16 | mg |
-| 20 | gyro[3] | i16 | dps × 10 |
-| 26 | bus_mv | u16 | INA226 |
-| 28 | shunt_ua | i32 | INA226 |
-| 32 | flags | u8 | bit0 = fall, bit1 = lowbat, etc. |
+| 12 | analog_showcase_ua | i32 | discrete current-sense block (ADR-0008) |
+| 16 | accel[3] | i16 | mg |
+| 22 | gyro[3] | i16 | dps × 10 |
+| 28 | bus_mv | u16 | INA226 |
+| 30 | shunt_ua | i32 | INA226 |
+| 34 | flags | u8 | bit0 = fall, bit1 = lowbat, etc. |
 
 CRC16-CCITT over LEN..PAYLOAD.
 

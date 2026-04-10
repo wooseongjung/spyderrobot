@@ -4,7 +4,7 @@ Phase 1 telemetry stack: read **MPU6050 (IMU)** and **DHT11 (temp/humidity)** di
 
 > **Wiring cheat sheet:** [`../../docs/phase1-wiring.md`](../../docs/phase1-wiring.md) — keep it open while wiring.
 
-> **Deferred to Phase 2 (STM32):** HC-SR04 ultrasonic (needs 5 V → 3.3 V level shift on ECHO) and the raindrop sensor (needs an ADC). Their driver scaffolds remain in `sensors/` but are disabled in `config.yaml`.
+> **Deferred to Phase 2 (STM32):** HC-SR04 ultrasonic (needs 5 V → 3.3 V level shift on ECHO). Its driver scaffold remains in `sensors/` but is disabled in `config.yaml`.
 
 ## Current layout
 
@@ -15,10 +15,10 @@ telemetry/
 ├── config.yaml          rate, pins, output path
 ├── requirements.txt
 ├── sensors/             individual driver skeletons
-│   ├── mpu6050.py       I2C IMU
+│   ├── mpu6050.py       I2C IMU (Phase 1 prototype; MPU9250 is the v1 part)
+│   ├── mpu9250.py       I2C IMU — v1 end-product driver (stub, Phase 2)
 │   ├── dht11.py         1-wire temp / humidity
-│   ├── hcsr04.py        ultrasonic distance
-│   └── raindrop.py      digital wetness (Phase 1) / analog (later)
+│   └── hcsr04.py        ultrasonic distance
 └── sample_data/         CSVs from real runs (committed selectively)
 ```
 
@@ -66,12 +66,12 @@ After each sensor: rerun `python -m logger` and confirm its column in `sample_da
 
 Full step-by-step: [`../../docs/phase1-wiring.md`](../../docs/phase1-wiring.md).
 
-## Phase 1 exit criterion (from `docs/08-roadmap-milestones.md`)
+## Phase 1 exit criterion (from `docs/08-roadmap-milestones.md`) — **done**
 
-- [ ] MPU6050 and DHT11 return plausible values for ≥ 30 min uninterrupted
-- [ ] CSV log committed under `sample_data/`
-- [ ] OLED displays IMU + temp + humidity
-- [ ] Photo of breadboard rig in `assets/images/`
+- [x] MPU6050 and DHT11 return plausible values end-to-end (30-min endurance waived — see [ADR-0005](../../docs/10-design-decisions.md#adr-0005--waive-phase-1-30-minute-endurance-criterion); relocated to Phase 5 / Phase 7)
+- [x] CSV log committed under `sample_data/`
+- [x] OLED displays IMU + temp + humidity
+- [x] Photo of breadboard rig in `assets/images/phase1-breadboard.jpg`
 
 ## Looking ahead (Phase 2)
 

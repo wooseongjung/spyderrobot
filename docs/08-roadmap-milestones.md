@@ -14,7 +14,7 @@ Each phase has a clear **deliverable** and **exit criterion**. A phase is "done"
 ## Phase 1 — Breadboard prototype (Pi-only, IMU + env + display)
 **Goal:** Prove the I²C path and a non-trivial sensor work end-to-end on the Pi before introducing the MCU.
 **In scope:** MPU6050 (IMU, I²C), DHT11 (temp/humidity, 1-wire), SSD1306 OLED (I²C, shares the bus with the MPU6050).
-**Out of scope (deferred to Phase 2 / STM32):** HC-SR04 ultrasonic (needs 5 V → 3.3 V level shift on ECHO) and the raindrop sensor (needs an ADC). Their driver scaffolds remain in `pi/telemetry/sensors/` but are disabled in `config.yaml`.
+**Out of scope (deferred to Phase 2 / STM32):** HC-SR04 ultrasonic (needs 5 V → 3.3 V level shift on ECHO). Its driver scaffold remains in `pi/telemetry/sensors/` but is disabled in `config.yaml`.
 **Wiring cheat sheet:** [`phase1-wiring.md`](phase1-wiring.md)
 **Deliverable:** Pi 5 reads MPU6050 + DHT11 directly via Python, logs to CSV, OLED shows live values.
 **Exit criterion:**

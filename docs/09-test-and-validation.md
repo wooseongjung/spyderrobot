@@ -8,9 +8,10 @@ How each subsystem is tested and what counts as "passing." This is the document 
 |---|---|---|
 | DHT11 / BME280 | Compare to a reference thermometer/hygrometer at room temp | within ±2 °C, ±5 %RH (DHT11) / ±0.5 °C, ±3 %RH (BME280) |
 | HC-SR04 | Range a wall at 0.1 / 0.5 / 1.0 / 2.0 m | within ±1 cm (close), ±3 cm (far) |
-| Raindrop | Dry vs wet vs flood | three distinct ADC bands, > 200 counts apart |
-| MPU6050 / 9250 | Stationary on flat surface | accel z ≈ 1 g ± 0.05; gyro ≈ 0 ± 0.5 dps |
+| MPU6050 (prototype) | Stationary on flat surface | accel z ≈ 1 g ± 0.05; gyro ≈ 0 ± 0.5 dps |
+| MPU9250 (v1 part) | Stationary on flat surface, plus mag heading sweep | accel/gyro as MPU6050; mag heading repeatable to ±3° |
 | INA226 | Known load on bench PSU (e.g. 5 V × 0.5 A) | within ± 2 % of meter |
+| Discrete current-sense block (ADR-0008) | Same known load, in parallel with INA226 | within ± 5 % of INA226 reading; CMRR ≥ 60 dB measured |
 
 ## PCB bring-up checklist (per-board)
 

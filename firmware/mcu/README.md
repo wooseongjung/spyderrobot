@@ -16,11 +16,11 @@ mcu/
 │   ├── uart_link.c
 │   ├── telemetry.c
 │   └── sensors/
-│       ├── imu.c
+│       ├── imu.c              (MPU9250, v1 end part)
 │       ├── env.c
 │       ├── ultrasonic.c
-│       ├── raindrop.c
-│       └── ina226.c
+│       ├── ina226.c
+│       └── analog_showcase.c  (discrete op-amp current-sense block, ADR-0008)
 ├── spyder-mcu.ioc          (CubeMX project)
 └── README.md
 ```
