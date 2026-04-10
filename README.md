@@ -51,12 +51,11 @@ The SSD1306 is held in frame rendering `spyderrobot P1` + live accelerometer val
                     |  - IMU (tilt / shock)       |
                     |  - environmental sensors    |
                     |  - watchdog / safety        |
-                    +---+----+----+----+----+-----+
-                        |    |    |    |    |
-                        |    |    |    |    +-> raindrop sensor
+                    +---+----+----+----+-----+
+                        |    |    |    |
                         |    |    |    +------> ultrasonic (HC-SR04)
                         |    |    +-----------> temp/humidity (DHT11 → BME280)
-                        |    +----------------> IMU (MPU6050 → MPU9250)
+                        |    +----------------> IMU (MPU6050 prototype → MPU9250 v1)
                         +---------------------> INA226 (planned)
 
                     +-----------------------------+
@@ -97,13 +96,12 @@ Full architecture: [`docs/02-system-architecture.md`](docs/02-system-architectur
 
 ## Hardware (current prototype → planned)
 
-| Subsystem | Prototype | Planned upgrade |
+| Subsystem | Prototype (Phase 1) | v1 end product |
 |---|---|---|
 | Temp / humidity | DHT11 | BME280 or SHT31 |
 | Air quality | — | BME680 (later) |
-| Wetness | Raindrop module | (kept) |
 | Distance | HC-SR04 ultrasonic | (kept) |
-| IMU | MPU6050 | MPU9250 |
+| IMU | MPU6050 | **MPU9250** |
 | Power monitor | — | INA226 |
 | Compute (high-level) | Raspberry Pi 5 | (kept) |
 | MCU (board) | STM32 (Nucleo dev → custom PCB) | STM32G4/F4 family |

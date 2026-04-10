@@ -96,15 +96,17 @@ assume the user has:
   function generator, ±15 V and +5 V bench supplies, 2× 16-bit AI at up to
   200 kS/s, 2× AO, 8× 0–5 V DIO (not fast enough for sub-µs timing)
 - Breadboard + jumper kit
-- Sensor kit: MPU6050, DHT11, HC-SR04, raindrop sensor, SSD1306 OLED,
-  LCD1602, PS2 joystick, PCA9685, 12× MG996R servos, Raspberry Pi AI Camera
+- Sensor kit: MPU6050 (Phase 1 prototype; MPU9250 is the v1 end part),
+  DHT11, HC-SR04, SSD1306 OLED, LCD1602, PS2 joystick, PCA9685,
+  12× MG996R servos, Raspberry Pi AI Camera
 - The existing spyder quadruped chassis (SolidWorks-designed; URDF in
   `spider/`)
 
 Suggest the myDAQ specifically for:
 - I²C / SPI / UART scoping before swapping cables blindly
 - Rail continuity and voltage checks before powering the Pi
-- Analog sensor characterisation (raindrop curve, thermistors, photodiodes)
+- Analog sensor characterisation (thermistors, photodiodes, shunt-resistor
+  current-sense front-ends)
 - PCB bring-up rail verification in Phase 4
 
 Do NOT assume a handheld multimeter or a standalone oscilloscope — the

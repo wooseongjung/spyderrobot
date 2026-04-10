@@ -1,5 +1,11 @@
 """MPU6050 6-DoF IMU driver (I2C).
 
+NOTE — Phase 1 prototype only. The v1 custom PCB is designed around the
+MPU9250 (9-DoF) as the end-product IMU; see ADR-0007 in
+`docs/10-design-decisions.md`. This driver stays in the repo as the
+breadboard bring-up reference, but the Phase 2+ firmware and Pi-side
+code target `sensors/mpu9250.py` once that driver is fleshed out.
+
 Default I2C address: 0x68 (AD0 low) or 0x69 (AD0 high).
 
 Wiring (Pi 5):

@@ -27,7 +27,6 @@ from display import OledDisplay
 from sensors.dht11 import DHT11
 from sensors.hcsr04 import HCSR04
 from sensors.mpu6050 import MPU6050
-from sensors.raindrop import Raindrop
 
 
 CONFIG_PATH = Path(__file__).parent / "config.yaml"
@@ -50,8 +49,7 @@ def open_csv(path: Path) -> tuple:
         "imu_temp_c",
         "env_temp_c", "env_rh",
         "dist_mm",
-        "wet",
-        "errors_imu", "errors_env", "errors_dist", "errors_wet",
+        "errors_imu", "errors_env", "errors_dist",
     ])
     return f, writer
 
@@ -65,7 +63,6 @@ def main() -> int:
     imu  = MPU6050()  if sensor_cfg.get("imu",      {}).get("enabled", True) else None
     env  = DHT11()    if sensor_cfg.get("env",      {}).get("enabled", True) else None
     dist = HCSR04()   if sensor_cfg.get("distance", {}).get("enabled", True) else None
-    wet  = Raindrop() if sensor_cfg.get("wetness",  {}).get("enabled", True) else None
 
     display_cfg = cfg.get("display", {})
     display = (
@@ -74,7 +71,7 @@ def main() -> int:
         else None
     )
 
-    for s in (imu, env, dist, wet, display):
+    for s in (imu, env, dist, display):
         if s is None:
             continue
         try:
@@ -101,7 +98,6 @@ def main() -> int:
             imu_r  = _safe_read(imu)  if imu  else None
             env_r  = _safe_read(env)  if env  else None
             dist_r = _safe_read(dist) if dist else None
-            wet_r  = _safe_read(wet)  if wet  else None
 
             row = [
                 iso_ts, t_ms,
@@ -111,11 +107,9 @@ def main() -> int:
                 env_r.temp_c if env_r else None,
                 env_r.rh if env_r else None,
                 dist_r.distance_mm if dist_r else None,
-                int(wet_r.wet) if wet_r else None,
                 imu.error_count  if imu  else 0,
                 env.error_count  if env  else 0,
                 dist.error_count if dist else 0,
-                wet.error_count  if wet  else 0,
             ]
             writer.writerow(row)
             f.flush()
@@ -136,7 +130,7 @@ def main() -> int:
                 time.sleep(sleep_s)
     finally:
         f.close()
-        for s in (imu, env, dist, wet, display):
+        for s in (imu, env, dist, display):
             if s is None:
                 continue
             try:

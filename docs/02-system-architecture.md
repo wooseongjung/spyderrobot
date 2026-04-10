@@ -23,12 +23,11 @@
                              |  +-------+--------+   |
                              |          |            |
                              |  I²C / SPI / ADC / GPIO|
-                             +---+---+---+---+---+---+
-                                 |   |   |   |   |
-                                 |   |   |   |   +--> raindrop (analog/digital)
+                             +---+---+---+---+-------+
+                                 |   |   |   |
                                  |   |   |   +------> HC-SR04 (GPIO trigger/echo)
                                  |   |   +----------> DHT11 → BME280 (1-wire / I²C)
-                                 |   +--------------> MPU6050 → MPU9250 (I²C)
+                                 |   +--------------> MPU6050 prototype → MPU9250 v1 (I²C)
                                  +------------------> INA226 (I²C, planned)
 
                              +-----------------------+
@@ -57,7 +56,7 @@ Detailed rationale → [`docs/10-design-decisions.md`](10-design-decisions.md).
 ## Comms topology
 
 - **Pi 5 ↔ MCU board:** UART, framed protocol with start byte, length, payload, CRC. Frame format defined in [`docs/05-firmware-architecture.md`](05-firmware-architecture.md).
-- **MCU ↔ sensors:** I²C primary bus for IMU, environmental, power monitor. GPIO for HC-SR04 trigger/echo. ADC for raindrop analog channel.
+- **MCU ↔ sensors:** I²C primary bus for IMU, environmental, power monitor. GPIO for HC-SR04 trigger/echo. Spare ADC channels reserved for the discrete analog-showcase block (see [`docs/04-pcb-design.md`](04-pcb-design.md)).
 - **Pi 5 ↔ PCA9685:** I²C (separate from MCU bus).
 - **Pi 5 ↔ operator:** WiFi, browser-based dashboard.
 
