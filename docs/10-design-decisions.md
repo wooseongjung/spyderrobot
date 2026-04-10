@@ -97,6 +97,26 @@ Phase 1 already has a real failure mode documented: the OLED column off-by-one (
 
 ---
 
+## ADR-0008 — Include a discrete op-amp current-sense block on the v1 PCB as an analog-design showcase
+**Date:** 2026-04-10
+**Decision:** The v1 custom PCB carries a **discrete op-amp current-sense amplifier** (op-amp + matched resistors + Kelvin-sensed shunt) **in addition to** the INA226. Both measure the same rail. The INA226 is the production monitoring path; the discrete block is an analog-design showcase that proves I can reason about CMRR, matched-resistor tolerance, bandwidth, and layout — not just drop in a chip.
+**Context:** The project's target job pipeline (ADI, Qualcomm analog, GE Vernova power, KAIST analog/mixed-signal) specifically rewards evidence of **transistor- and op-amp-level analog design**, not "I integrated an I²C sensor." An INA226 alone is a chip drop-in. A discrete block next to it is a portfolio piece: the PCB, the schematic, and the bench measurements become something I can point to in an interview and say "here is how I reasoned about CMRR, here is how I specced the shunt, here is the bench data where I compared my block against the INA226."
+
+The full-stack question (*"should I design every sensor at transistor level?"*) was answered in the earlier discussion: no, it's over-budget and most modern sensors (MEMS IMU, MEMS pressure) are foundry problems that discrete design can't touch. But a **single** well-chosen discrete block — current sense — is:
+1. The cheapest path to a strong analog-design signal
+2. Directly comparable to a commercial part on the same board, so the results are falsifiable
+3. Small enough to not threaten Phase 4 bring-up
+**Alternatives:**
+1. INA226 only → convenient, zero analog-design signal.
+2. Discrete block for *every* sensor (IMU, env, distance, power) → infeasible; IMU and env are foundry parts, not op-amp problems.
+3. Discrete block for current sense only, parallel to INA226 (chosen).
+4. Discrete block instead of INA226 → loses the "calibrate-against-known-good" property that makes the showcase actually credible.
+**Rationale:** One showcase block, with a named commercial reference on the same board for sanity-check, is the maximum-signal / minimum-risk configuration. The block's detailed spec (op-amp selection, resistor tolerance target, Kelvin-sense layout, bandwidth budget, bench validation protocol) lives in `docs/04-pcb-design.md` § "Analog showcase block." The firmware samples it through a reserved ADC channel at 10 Hz, alongside the INA226 readings, and the telemetry frame carries `analog_showcase_ua` next to the INA226 `shunt_ua` so the comparison can be done in post-processing on the Pi.
+
+A v1 solder-jumper fallback lets the block be depopulated if it is the root cause of any bring-up issue, so it cannot gate the Phase 4 exit criterion.
+
+---
+
 ## Template for new entries
 
 ```
