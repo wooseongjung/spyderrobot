@@ -29,7 +29,7 @@ Two-column BOM: what's used in the **breadboard prototype** vs. what's planned f
 | IMU | MPU6050 (6-DoF, prototype only) | **MPU9250** (9-DoF, QFN-24) | locked by [ADR-0007](10-design-decisions.md#adr-0007--mpu9250-is-the-v1-end-product-imu-mpu6050-is-prototype-only). **Stock check needed at order time** — MPU9250 is end-of-life from InvenSense; secondary distributors and JLCPCB extended-parts still carry it, but verify before BOM lock. Drop-in fallback: ICM-20948. |
 | Power monitor IC | — | **INA226** (TI, VSSOP-10) | I²C, ±0.1 % gain error, 16-bit; production monitoring path |
 | Power monitor — analog showcase | — | **OPA333AID** (TI, **SOIC-8**) + 0.1 % matched R-array | discrete op-amp current sense in parallel with INA226. Electrical pick locked by [ADR-0008](10-design-decisions.md#adr-0008--include-a-discrete-op-amp-current-sense-block-on-the-v1-pcb-as-an-analog-design-showcase) + [ADR-0010](10-design-decisions.md#adr-0010--opa333-as-the-analog-showcase-op-amp). Package deviates from ADR-0010's SOT-23-5 to SOIC-8 per [ADR-0014](10-design-decisions.md#adr-0014--opa333-package-deviates-to-soic-8-for-v1-build-follow-up-to-adr-0010) for hand-assembly + bench-probing ergonomics. Fallback: OPA2333 (dual, SOIC-8). |
-| Current shunt | — | **WSLP2512R0200FE** (Vishay WSLP, 20 mΩ, 1 %, 1 W, 2512, **4-terminal Kelvin**) | shared between INA226 and OPA333 block per [ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase). Upgraded from 2-terminal WSL2512 to 4-terminal Kelvin per [ADR-0015](10-design-decisions.md#adr-0015--wslp2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013) — Kelvin commitment now lives in the part, not the layout. **Needs custom KiCad symbol + footprint** (SnapEDA, search "WSLP2512"). |
+| Current shunt | — | **WSK2512R0200FEA** (Vishay WSK, 20 mΩ, 1 %, 1 W, 2512, **4-terminal Kelvin**) | shared between INA226 and OPA333 block per [ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase). Upgraded from 2-terminal WSL2512 to 4-terminal Kelvin per [ADR-0015](10-design-decisions.md#adr-0015--wsk2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013). KiCad built-in: symbol `Device:R_Shunt`, footprint `Resistor_SMD:R_Shunt_Vishay_WSK2512_6332Metric_T1.19mm`. |
 | Matched R-pair (gain set) | — | R1 = 1 kΩ, R2 = 30 kΩ, **0.1 % thin-film, 25 ppm/°C, matched-pair array** | Vishay MORN / Susumu RM3216 series. G = 30, full-scale 5 A — locked by [ADR-0013](10-design-decisions.md#adr-0013--custom-board-sits-in-the-pi-5-v-power-path-not-the-servo-rail) |
 | Battery fuel gauge | — | — | not in v1; revisit when battery cell is chosen |
 
@@ -93,7 +93,7 @@ Grouped by likely vendor. Stock-check every part on the chosen vendor before pla
 - BME280 — 1
 - INA226AIDGSR — 1
 - OPA333AID — 1 (SOIC-8 per ADR-0014; fallback OPA2333 dual SOIC-8)
-- WSLP2512R0200FE — 2 (one spare; 4-terminal Kelvin per ADR-0015; needs SnapEDA symbol+footprint download)
+- WSK2512R0200FEA — 2 (one spare; 4-terminal Kelvin per ADR-0015; KiCad built-in symbol + footprint)
 - SiA457DJ — 1 (or DMP3056L-7 as secondary)
 - MCP1700-3302E/TT — 1
 - 8 MHz crystal (ABM3B-8.000MHZ-B2T or similar) — 1
