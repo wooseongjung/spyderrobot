@@ -1,0 +1,354 @@
+Block,Ref Des,Component,KiCad Symbol,Pin #,Pin Name,Net,Connects To,Notes,Done
+,,,,,,,,,
+=== BATTERY INPUT & PROTECTION ===,,,,,,,,,
+Battery Input,J_BAT,2-pin header,Connector_Generic:Conn_01x02,1,VBAT_IN,VBAT_IN,TVS D_TVS pin 1,"Battery input 7.4-12V (2S-3S LiPo); use XT30 or screw terminal",
+Battery Input,J_BAT,2-pin header,Connector_Generic:Conn_01x02,2,GND,GND,Ground plane,,
+TVS Diode,D_TVS,SMBJ12CA,Device:D_TVS_bidirectional,1,Anode 1,VBAT_IN,J_BAT pin 1,"Bidirectional TVS — clamps transients; Vr=12V, Vc=19.9V; sized for 3S LiPo max",
+TVS Diode,D_TVS,SMBJ12CA,Device:D_TVS_bidirectional,2,Anode 2,GND,,Place close to J_BAT,
+PTC Fuse,F1,PTC 6A resettable,Device:Polyfuse,1,IN,VBAT_IN,J_BAT pin 1,Upstream protection,
+PTC Fuse,F1,PTC 6A resettable,Device:Polyfuse,2,OUT,VBAT_FUSED,Q1 Source,After fuse,
+Reverse-Pol FET,Q1,SiA457DJ (P-ch),Transistor_FET:Q_PMOS_GSD,1,Gate,Q1_GATE,R_GATE pin 1,"Vgs = 0 - VBAT = -7.4 to -12V → FET ON; check Vgs abs max (±20V OK); gate via 100k to GND for ringing damping",
+Gate Resistor,R_GATE,100k 0805,Device:R,1,,Q1_GATE,Q1 Gate (pin 1),"Damps gate ringing during fast battery insertion transients",
+Gate Resistor,R_GATE,100k 0805,Device:R,2,,GND,,"Defined impedance on gate node — cheap insurance for first-spin board",
+Reverse-Pol FET,Q1,SiA457DJ (P-ch),Transistor_FET:Q_PMOS_GSD,2,Source,VBAT_FUSED,F1 pin 2,Connected to input power (after fuse),
+Reverse-Pol FET,Q1,SiA457DJ (P-ch),Transistor_FET:Q_PMOS_GSD,3,Drain,VBAT_PROT,U_BUCK VIN,"Protected battery voltage to buck converter",
+,,,,,,,,,
+=== BUCK CONVERTER (TPS5430) ===,,,,,,,,,
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,1,BOOT,BOOT,C_BOOT pin 1,"Bootstrap cap 100nF between BOOT and PH",
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,7,VIN,VBAT_PROT,Q1 drain,"Input 7.4-15V; 22µF×2 ceramic input caps to GND close to pin",
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,5,EN,VBAT_PROT,,"Enable tied to VIN (always on); add resistor divider if shutdown needed",
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,4,VSENSE,FB_5V,"R_FB1/R_FB2 junction","Feedback sense pin; set divider for 5.0V output",
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,8,PH,SW_NODE,"L1 pin 1, C_BOOT pin 2","Switch node — connect to inductor; fast dV/dt — keep trace short",
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,6,GND,GND,,GND pin,
+Buck,U_BUCK,TPS5430DDA,Regulator_Switching:TPS5430DDA,9,GNDPAD,GND,,"Exposed thermal pad — connect to GND plane with multiple vias",
+,,,,,,,,,
+=== BUCK — EXTERNAL COMPONENTS ===,,,,,,,,,
+Bootstrap Cap,C_BOOT,100nF X7R 0805,Device:C,1,,BOOT,U_BUCK pin 1,"Between BOOT and PH; use X7R ≥16V",
+Bootstrap Cap,C_BOOT,100nF X7R 0805,Device:C,2,,SW_NODE,U_BUCK pin 8 (PH) / L1 pin 1,,
+Input Cap,C_IN1,22µF X5R 1210,Device:C,1,,VBAT_PROT,U_BUCK VIN,"Close to VIN pin; ≥25V rated",
+Input Cap,C_IN1,22µF X5R 1210,Device:C,2,,GND,,,
+Input Cap,C_IN2,22µF X5R 1210,Device:C,1,,VBAT_PROT,U_BUCK VIN,"Second input cap for ripple reduction",
+Input Cap,C_IN2,22µF X5R 1210,Device:C,2,,GND,,,
+Inductor,L1,22µH 4A shielded,Device:L,1,,SW_NODE,U_BUCK PH (pin 8),"Shielded power inductor; Isat ≥ 4A; e.g., Bourns SRN6045TA-220M",
+Inductor,L1,22µH 4A shielded,Device:L,2,,5V_BUCK,Output caps + R_SHUNT,"Buck output — pre-shunt 5V",
+Output Cap,C_OUT1,22µF X5R 1210,Device:C,1,,5V_BUCK,L1 pin 2,"Close to output; ≥10V rated",
+Output Cap,C_OUT1,22µF X5R 1210,Device:C,2,,GND,,,
+Output Cap,C_OUT2,22µF X5R 1210,Device:C,1,,5V_BUCK,L1 pin 2,"Second output cap",
+Output Cap,C_OUT2,22µF X5R 1210,Device:C,2,,GND,,,
+FB Top,R_FB1,"10k 1% 0805",Device:R,1,,5V_BUCK,L1 pin 2,"Feedback divider top; VOUT = 1.221V × (1 + R_FB1/R_FB2) = 1.221 × (1 + 10k/3.24k) ≈ 5.0V",
+FB Top,R_FB1,"10k 1% 0805",Device:R,2,,FB_5V,U_BUCK VSENSE (pin 4),,
+FB Bottom,R_FB2,"3.24k 1% 0805",Device:R,1,,FB_5V,U_BUCK VSENSE (pin 4),,
+FB Bottom,R_FB2,"3.24k 1% 0805",Device:R,2,,GND,,"VOUT = 1.221V × (1 + 10k/3.24k) ≈ 5.0V; use 1% or better; VREF = 1.221V per TPS5430 datasheet SLVS632",
+,,,,,,,,,
+=== CURRENT SHUNT (POST-BUCK) ===,,,,,,,,,
+Bypass Jumper,JP1,0 ohm 0805,Device:R,1,IN,5V_BUCK,L1 pin 2 / buck output,Bridges shunt; cut after Phase 4 validation,
+Bypass Jumper,JP1,0 ohm 0805,Device:R,2,OUT,5V_RAIL,WSK2512 pin 4 (I1),,
+,,,,,,,,,
+=== KELVIN SHUNT (4-TERMINAL) ===,,,,,,,,,
+Shunt,R_SHUNT,WSK2512R0200FEA,Device:R_Shunt,1,I2 (Current In),5V_BUCK,Buck output (L1 pin 2),Force pad — load current in (post-buck regulated 5V),
+Shunt,R_SHUNT,WSK2512R0200FEA,Device:R_Shunt,2,E2 (Sense+),SENSE_HI,"INA226 IN+ (pin 9), R1_NI pin 1",Sense pad — high-side Kelvin tap,✓
+Shunt,R_SHUNT,WSK2512R0200FEA,Device:R_Shunt,3,E1 (Sense-),SENSE_LO,"INA226 IN- (pin 10), R1_INV pin 1",Sense pad — low-side Kelvin tap,✓
+Shunt,R_SHUNT,WSK2512R0200FEA,Device:R_Shunt,4,I1 (Current Out),5V_RAIL,"Pi header, HC-SR04 VCC, MCP1700 VIN, INA226 VBUS, JP1 pin 2",Force pad — load current out,✓
+,,,,,,,,,
+=== 3.3V LDO ===,,,,,,,,,
+LDO,U_LDO,MCP1700-3302E/TT,Regulator_Linear:MCP1700-3302E_SOT-23,1,GND,GND,Ground plane,SOT-23-3,✓
+LDO,U_LDO,MCP1700-3302E/TT,Regulator_Linear:MCP1700-3302E_SOT-23,2,VOUT,3V3_RAIL,"STM32 VDD, VBAT, sensors, op-amp, pull-ups",100nF + 10uF output caps to GND,✓
+LDO,U_LDO,MCP1700-3302E/TT,Regulator_Linear:MCP1700-3302E_SOT-23,3,VIN,5V_LDO_IN,FB2 pin 2,"1uF + 100nF input caps to GND AFTER FB2, at LDO pin",✓
+,,,,,,,,,
+=== STM32F411RET6 — POWER PINS ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,—,VDD (x4),3V3_RAIL,MCP1700 VOUT,"100nF per pin (pins 19,32,48,64) + 10uF shared bulk; LQFP-64 has 4 VDD pins",✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,—,VBAT,3V3_RAIL,MCP1700 VOUT,100nF to GND; tie to VDD (no battery backup),✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,—,VDDA,VDDA_FILT,FB1 output,"Ferrite bead from 3V3 + 1uF + 100nF to GND",✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,—,VSSA,GND,Ground plane,Analog ground — same GND plane,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,—,VSS (x3),GND,Ground plane,LQFP-64 has 3 VSS pins,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,—,VCAP_1,VCAP,4.7uF cap to GND,Internal 1.2V regulator — do NOT connect to any rail,✓
+VDDA Filter,FB1,Ferrite bead,Device:FerriteBead,1,IN,3V3_RAIL,MCP1700 VOUT,600 ohm @ 100MHz typical,✓
+VDDA Filter,FB1,Ferrite bead,Device:FerriteBead,2,OUT,VDDA_FILT,STM32 VDDA,,✓
+,,,,,,,,,
+=== STM32F411RET6 — CLOCK ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PH0,OSC_IN,HSE_IN,Y1 pin 1,"8 MHz crystal; 20pF load cap C_HSE1 to GND",✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PH1,OSC_OUT,HSE_OUT,Y1 pin 2,"8 MHz crystal; 20pF load cap C_HSE2 to GND",✓
+Crystal,Y1,8 MHz crystal,Device:Crystal,1,XIN,HSE_IN,STM32 PH0,HC-49S or 3225 SMD; ±20 ppm,✓
+Crystal,Y1,8 MHz crystal,Device:Crystal,2,XOUT,HSE_OUT,STM32 PH1,,✓
+Load Cap,C_HSE1,20pF COG 0805,Device:C,1,,HSE_IN,Y1 pin 1 / STM32 PH0,,✓
+Load Cap,C_HSE1,20pF COG 0805,Device:C,2,,GND,Ground plane,,✓
+Load Cap,C_HSE2,20pF COG 0805,Device:C,1,,HSE_OUT,Y1 pin 2 / STM32 PH1,,✓
+Load Cap,C_HSE2,20pF COG 0805,Device:C,2,,GND,Ground plane,,✓
+,,,,,,,,,
+=== STM32F411RET6 — RESET & BOOT ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,NRST,NRST,NRST,"R_RST, C_RST, SW_RST, SWD header",10k pull-up + 100nF to GND + button,✓
+Reset Pull-up,R_RST,10k 0805,Device:R,1,,3V3_RAIL,,,✓
+Reset Pull-up,R_RST,10k 0805,Device:R,2,,NRST,STM32 NRST,,✓
+Reset Cap,C_RST,100nF X7R 0805,Device:C,1,,NRST,STM32 NRST,,✓
+Reset Cap,C_RST,100nF X7R 0805,Device:C,2,,GND,,,✓
+Reset Button,SW_RST,Momentary tact,Switch:SW_Push,1,,NRST,STM32 NRST,Press to reset,✓
+Reset Button,SW_RST,Momentary tact,Switch:SW_Push,2,,GND,,,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,BOOT0,BOOT0,BOOT0,JP_BOOT,Jumper: GND = run mode; VDD = bootloader,✓
+Boot Jumper,JP_BOOT,3-pin header,Connector_Generic:Conn_01x03,1,,3V3_RAIL,,Centre pin to BOOT0,✓
+Boot Jumper,JP_BOOT,3-pin header,Connector_Generic:Conn_01x03,2,,BOOT0,STM32 BOOT0,,✓
+Boot Jumper,JP_BOOT,3-pin header,Connector_Generic:Conn_01x03,3,,GND,,Default: jumper on pins 2-3 (GND = normal run),✓
+,,,,,,,,,
+=== STM32F411RET6 — SWD DEBUG ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA13,SWDIO,SWDIO,J_SWD pin 2,AF0 — do NOT reassign,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA14,SWCLK,SWCLK,J_SWD pin 4,AF0 — do NOT reassign,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,1,VDD_TARGET,3V3_RAIL,,Debugger senses target voltage,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,2,SWDIO,SWDIO,STM32 PA13,,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,3,GND,GND,,,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,4,SWCLK,SWCLK,STM32 PA14,,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,5,GND,GND,,,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,6,SWO,SWO,STM32 PB3,"ITM printf-style debug trace — zero overhead when disabled; high value for firmware bring-up",
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,7,KEY,NC,,Pin removed / keying,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,8,NC,NC,,Not connected,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,9,GND,GND,,,✓
+SWD Header,J_SWD,2x5 1.27mm header,Connector:Conn_ARM_JTAG_SWD_10,10,NRST,NRST,STM32 NRST,Reset from debugger — CHECK: must be pin 10 not pin 6,✓
+,,,,,,,,,
+=== UART TO RASPBERRY PI ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA9,USART1_TX,UART_TX,J_UART pin 1,AF7; DMA2_Stream7_Ch4,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA10,USART1_RX,UART_RX,J_UART pin 2,AF7; DMA2_Stream2_Ch4,✓
+UART Header,J_UART,4-pin header,Connector_Generic:Conn_01x04,1,TX,UART_TX,STM32 PA9,STM32 TX → Pi RX (GPIO15),✓
+UART Header,J_UART,4-pin header,Connector_Generic:Conn_01x04,2,RX,UART_RX,STM32 PA10,Pi TX (GPIO14) → STM32 RX,✓
+UART Header,J_UART,4-pin header,Connector_Generic:Conn_01x04,3,GND,GND,,Common ground with Pi,✓
+UART Header,J_UART,4-pin header,Connector_Generic:Conn_01x04,4,3V3_REF,3V3_RAIL,,Optional voltage reference — do NOT power Pi from here,✓
+,,,,,,,,,
+=== I2C BUS (ACTIVE DEVICES) ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PB8,I2C1_SCL,I2C_SCL,"MPU9250 SCL, BME280 SCK, INA226 SCL, J_I2C, R_SCL",AF4; 4.7k pull-up to 3V3,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PB9,I2C1_SDA,I2C_SDA,"MPU9250 SDA, BME280 SDI, INA226 SDA, J_I2C, R_SDA",AF4; 4.7k pull-up to 3V3,✓
+I2C Pull-up,R_SCL,4.7k 0805,Device:R,1,,3V3_RAIL,,CHECK: must connect to 3V3 not SDA,✓
+I2C Pull-up,R_SCL,4.7k 0805,Device:R,2,,I2C_SCL,STM32 PB8,,✓
+I2C Pull-up,R_SDA,4.7k 0805,Device:R,1,,3V3_RAIL,,,✓
+I2C Pull-up,R_SDA,4.7k 0805,Device:R,2,,I2C_SDA,STM32 PB9,,✓
+I2C Breakout,J_I2C,4-pin header,Connector_Generic:Conn_01x04,1,SCL,I2C_SCL,,Expansion / OLED / bench probing,✓
+I2C Breakout,J_I2C,4-pin header,Connector_Generic:Conn_01x04,2,SDA,I2C_SDA,,,✓
+I2C Breakout,J_I2C,4-pin header,Connector_Generic:Conn_01x04,3,3V3,3V3_RAIL,,,✓
+I2C Breakout,J_I2C,4-pin header,Connector_Generic:Conn_01x04,4,GND,GND,,,✓
+,,,,,,,,,
+=== IMU — MPU9250 (QFN-24) ===,,,,,,,,,
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,VDD,3V3_RAIL,MCP1700 VOUT,100nF decoupling to GND,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,VDDIO,3V3_RAIL,,100nF decoupling to GND,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,GND,GND,,Including exposed pad,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,SCL,I2C_SCL,STM32 PB8,,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,SDA,I2C_SDA,STM32 PB9,,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,AD0,GND,,I2C address = 0x68,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,nCS,3V3_RAIL,,Tie HIGH for I2C mode (not SPI),✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,FSYNC,GND,,Not used — tie low,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,INT,IMU_INT,STM32 PB1 (EXTI),"Data-ready interrupt — open-drain, 10kΩ pull-up to 3V3; essential for RL balance loop at 100+ Hz",
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,REGOUT,REGOUT_IMU,100nF cap to GND,Internal regulator output — 100nF cap required,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,AUX_CL,NC,,Auxiliary I2C not used,✓
+IMU,U_IMU,MPU9250,Sensor_Motion:MPU-9250,—,AUX_DA,NC,,Auxiliary I2C not used,✓
+,,,,,,,,,
+=== ENV SENSOR — BME280 (LGA-8) ===,,,,,,,,,
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,1,GND,GND,,,✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,2,CSB,3V3_RAIL,,Tie HIGH for I2C mode,✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,3,SDI,I2C_SDA,STM32 PB9,,✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,4,SCK,I2C_SCL,STM32 PB8,,✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,5,SDO,GND,,I2C address = 0x76 (SDO=GND),✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,6,VDDIO,3V3_RAIL,,100nF decoupling to GND,✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,7,GND,GND,,,✓
+Env Sensor,U_ENV,BME280,Sensor_Pressure:BME280,8,VDD,3V3_RAIL,,100nF decoupling to GND,✓
+,,,,,,,,,
+=== POWER MONITOR — INA226 (VSSOP-10) ===,,,,,,,,,
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,1,A1,GND,,Address bit 1 = 0,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,2,A0,GND,,Address bit 0 = 0 → I2C addr 0x40,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,3,ALERT,INA_ALERT,STM32 PB0 (EXTI),"Over-current alert — open-drain, 10kΩ pull-up to 3V3; set threshold ~4A in firmware",
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,4,SDA,I2C_SDA,STM32 PB9,,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,5,SCL,I2C_SCL,STM32 PB8,,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,6,VS,3V3_RAIL,,100nF decoupling to GND; supply 2.7-5.5V,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,7,GND,GND,,,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,8,VBUS,5V_RAIL,WSK2512 pin 4 (I1),Bus voltage measurement (measures 5V rail to GND),✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,9,IN-,SENSE_LO,WSK2512 E1 (pin 3),Shunt voltage negative input — low side of shunt,✓
+Power Mon,U_INA,INA226AIDGSR,Analog_ADC:INA226,10,IN+,SENSE_HI,WSK2512 E2 (pin 2),Shunt voltage positive input — high side of shunt,✓
+,,,,,,,,,
+=== ANALOG SHOWCASE — OPA333 DIFF AMP (SOIC-8) ===,,,,,,,,,
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,1,NC,NC,,No connect,✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,2,IN-,OPA_INV,"R1_INV pin 2, R2_INV pin 1",Inverting input node,✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,3,IN+,OPA_NI,"R1_NI pin 2, R2_NI pin 1",Non-inverting input node,✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,4,V-,GND,,Negative supply = GND (single-supply),✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,5,NC,NC,,No connect,✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,6,VOUT,OPA_OUT,"R2_INV pin 2, JP_OPA4 pin 1",Output; feedback via R2_INV; to ADC via JP_OPA4 → R_FILT,✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,7,V+,3V3_RAIL,,100nF + 10uF decoupling to GND; rail-to-rail,✓
+Op-Amp,U_OPA,OPA333AID,Amplifier_Operational:OPA333xxD,8,NC,NC,,No connect,✓
+,,,,,,,,,
+=== ANALOG SHOWCASE — GAIN RESISTORS (MATCHED 0.1%) ===,,,,,,,,,
+"Gain (NI path)",R1_NI,"1k 0.1% thin-film",Device:R,1,,SENSE_HI,WSK2512 E2 (pin 2),Matched pair with R1_INV,✓
+"Gain (NI path)",R1_NI,"1k 0.1% thin-film",Device:R,2,,OPA_NI,OPA333 IN+ (pin 3),,✓
+"Gain (NI path)",R2_NI,"30k 0.1% thin-film",Device:R,1,,OPA_NI,OPA333 IN+ (pin 3),Matched pair with R2_INV,✓
+"Gain (NI path)",R2_NI,"30k 0.1% thin-film",Device:R,2,,GND,,Voltage divider to GND,✓
+"Gain (INV path)",R1_INV,"1k 0.1% thin-film",Device:R,1,,SENSE_LO,WSK2512 E1 (pin 3),Matched pair with R1_NI,✓
+"Gain (INV path)",R1_INV,"1k 0.1% thin-film",Device:R,2,,OPA_INV,OPA333 IN- (pin 2),,✓
+"Gain (INV path)",R2_INV,"30k 0.1% thin-film",Device:R,1,,OPA_INV,OPA333 IN- (pin 2),Feedback resistor; matched pair with R2_NI,✓
+"Gain (INV path)",R2_INV,"30k 0.1% thin-film",Device:R,2,,OPA_OUT,OPA333 VOUT (pin 6),Feedback from output to inverting input,✓
+,,,,,,,,,
+=== ANALOG SHOWCASE — OUTPUT FILTER & ADC ===,,,,,,,,,
+Output Filter,R_FILT,"10k 0805",Device:R,1,,JP_OPA4_OUT,JP_OPA4 pin 2,"RC low-pass ~106 Hz; fed through JP_OPA4 output isolation jumper",✓
+Output Filter,R_FILT,"10k 0805",Device:R,2,,ADC_VOUT,STM32 PA0 (ADC1_IN0) + C_FILT pin 1,,✓
+Output Filter,C_FILT,"150nF COG 0805",Device:C,1,,ADC_VOUT,STM32 PA0 + R_FILT pin 2,f_c = 1/(2pi*10k*150nF) ≈ 106 Hz,✓
+Output Filter,C_FILT,"150nF COG 0805",Device:C,2,,GND,,Same GND star point as OPA333 V-,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA0,ADC1_IN0,ADC_VOUT,R_FILT pin 2 / C_FILT pin 1,DMA2_Stream0_Ch0; analog showcase V_OUT,✓
+,,,,,,,,,
+=== ANALOG SHOWCASE — REFERENCE CHANNEL ===,,,,,,,,,
+Ref Divider,R_REF1,"10k 0805",Device:R,1,,3V3_RAIL,,Voltage divider: 3.3V × 10k/(10k+10k) = 1.65V reference,✓
+Ref Divider,R_REF1,"10k 0805",Device:R,2,,ADC_VREF,STM32 PA1 + R_REF2 pin 1,Known 1.65V for sanity check,✓
+Ref Divider,R_REF2,"10k 0805",Device:R,1,,ADC_VREF,STM32 PA1 + R_REF1 pin 2,,✓
+Ref Divider,R_REF2,"10k 0805",Device:R,2,,GND,,,✓
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA1,ADC1_IN1,ADC_VREF,R_REF1/R_REF2 junction,Bias / reference sanity-check channel,✓
+,,,,,,,,,
+=== ANALOG SHOWCASE — SOLDER-JUMPER ISOLATION ===,,,,,,,,,
+Solder Jumper,JP_OPA1,0 ohm 0805,Device:R,1,,3V3_RAIL,,Supply isolation — depopulate to cut OPA333 power,✓
+Solder Jumper,JP_OPA1,0 ohm 0805,Device:R,2,,OPA333 V+ (pin 7),,,✓
+Solder Jumper,JP_OPA2,0 ohm 0805,Device:R,1,,SENSE_HI,,Input HI isolation — depopulate to disconnect SENSE_HI from gain network,✓
+Solder Jumper,JP_OPA2,0 ohm 0805,Device:R,2,,R1_NI pin 1,,,✓
+Solder Jumper,JP_OPA3,0 ohm 0805,Device:R,1,,SENSE_LO,,Input LO isolation — depopulate to disconnect SENSE_LO from gain network,✓
+Solder Jumper,JP_OPA3,0 ohm 0805,Device:R,2,,R1_INV pin 1,,,✓
+Solder Jumper,JP_OPA4,0 ohm 0805,Device:R,1,,OPA_OUT,OPA333 VOUT (pin 6),Output isolation — depopulate to disconnect OPA333 output from ADC filter,
+Solder Jumper,JP_OPA4,0 ohm 0805,Device:R,2,,JP_OPA4_OUT,R_FILT pin 1,"When populated: OPA_OUT → JP_OPA4 → R_FILT → ADC_VOUT",
+,,,,,,,,,
+=== HC-SR04 ULTRASONIC (OFF-BOARD HEADER) ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA5,HC-SR04 TRIG,TRIG,J_HCSR04 pin 3,GPIO_OUT; push-pull; 10us pulse,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PA6,HC-SR04 ECHO,ECHO_3V3,R_ECHO_BOT pin 1,"AF2 TIM3_CH1 input capture; 3.3V level after divider",
+HC-SR04 Header,J_HCSR04,4-pin header,Connector_Generic:Conn_01x04,1,VCC,5V_RAIL,,HC-SR04 needs 5V,
+HC-SR04 Header,J_HCSR04,4-pin header,Connector_Generic:Conn_01x04,2,GND,GND,,,
+HC-SR04 Header,J_HCSR04,4-pin header,Connector_Generic:Conn_01x04,3,TRIG,TRIG,STM32 PA5,3.3V drive is accepted by 5V TTL input (VIH > 2V),
+HC-SR04 Header,J_HCSR04,4-pin header,Connector_Generic:Conn_01x04,4,ECHO,ECHO_5V,R_ECHO_TOP pin 1,5V output — must level-shift down to 3.3V,
+Level Shift,R_ECHO_TOP,"1k 0805",Device:R,1,,ECHO_5V,J_HCSR04 ECHO pin 4,Resistive divider 5V → 3.3V,
+Level Shift,R_ECHO_TOP,"1k 0805",Device:R,2,,ECHO_3V3,STM32 PA6 + R_ECHO_BOT pin 1,3.3V at junction,
+Level Shift,R_ECHO_BOT,"2k 0805",Device:R,1,,ECHO_3V3,STM32 PA6 + R_ECHO_TOP pin 2,V = 5V × 2k/(1k+2k) = 3.33V,
+Level Shift,R_ECHO_BOT,"2k 0805",Device:R,2,,GND,,,
+ECHO Clamp,D_CLAMP,BAT54,Device:D_Schottky,Anode,,ECHO_3V3,R_ECHO_TOP/BOT junction,"Clamps overshoot to 3V3+0.3V; protects PA6 abs max",
+ECHO Clamp,D_CLAMP,BAT54,Device:D_Schottky,Cathode,,3V3_RAIL,,Small-signal Schottky,
+,,,,,,,,,
+=== ESD PROTECTION ===,,,,,,,,,
+UART ESD,U_ESD1,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,1,GND,GND,,Dual TVS array for UART header,
+UART ESD,U_ESD1,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,2,IO1,UART_TX,J_UART pin 1,ESD clamp on TX line,
+UART ESD,U_ESD1,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,3,VCC,3V3_RAIL,,Clamp reference,
+UART ESD,U_ESD1,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,4,IO2,UART_RX,J_UART pin 2,ESD clamp on RX line,
+I2C ESD,U_ESD2,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,1,GND,GND,,Dual TVS array for I2C header,
+I2C ESD,U_ESD2,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,2,IO1,I2C_SCL,J_I2C SCL pin,ESD clamp on SCL,
+I2C ESD,U_ESD2,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,3,VCC,3V3_RAIL,,Clamp reference,
+I2C ESD,U_ESD2,PRTR5V0U2X,Power_Protection:PRTR5V0U2X,4,IO2,I2C_SDA,J_I2C SDA pin,ESD clamp on SDA,
+,,,,,,,,,
+=== ADDITIONAL POWER COMPONENTS ===,,,,,,,,,
+5V Bulk Cap,C_BULK,100uF 10V electrolytic,Device:CP,1,,5V_RAIL,,Low-ESR bulk cap near J_PI — dampens Pi boot inrush,
+5V Bulk Cap,C_BULK,100uF 10V electrolytic,Device:CP,2,,GND,,,
+LDO Ferrite,FB2,30R@100MHz 0805,Device:FerriteBead,1,,5V_RAIL,,Isolates LDO input from Pi switching noise,
+LDO Ferrite,FB2,30R@100MHz 0805,Device:FerriteBead,2,,5V_LDO_IN,U_LDO VIN (pin 3),"Existing 1uF+100nF input caps go AFTER FB2, at LDO pin",
+INA ALERT Pull-up,R_ALERT,10k 0805,Device:R,1,,3V3_RAIL,,INA226 ALERT is open-drain — needs pull-up,
+INA ALERT Pull-up,R_ALERT,10k 0805,Device:R,2,,INA_ALERT,INA226 pin 3 + STM32 PB0,,
+IMU INT Pull-up,R_IMU_INT,10k 0805,Device:R,1,,3V3_RAIL,,MPU9250 INT is open-drain — needs pull-up,
+IMU INT Pull-up,R_IMU_INT,10k 0805,Device:R,2,,IMU_INT,MPU9250 INT + STM32 PB1,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PB0,INA226 ALERT,INA_ALERT,INA226 pin 3 + R_ALERT,EXTI0 — over-current interrupt,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PB1,MPU9250 INT,IMU_INT,MPU9250 INT + R_IMU_INT,EXTI1 — IMU data-ready interrupt,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PB3,SWO,SWO,J_SWD pin 6,"AF0 — Serial Wire Output for ITM trace; zero overhead when disabled",
+,,,,,,,,,
+=== GPIO BREAKOUT HEADER ===,,,,,,,,,
+GPIO Header,J_GPIO,6-pin header,Connector_Generic:Conn_01x06,1,3V3,3V3_RAIL,,Power for external modules,
+GPIO Header,J_GPIO,6-pin header,Connector_Generic:Conn_01x06,2,GND,GND,,,
+GPIO Header,J_GPIO,6-pin header,Connector_Generic:Conn_01x06,3,PB5,PB5,STM32 PB5,Spare GPIO — TIM3_CH2 / SPI1_MOSI / I2C1_SMBA,
+GPIO Header,J_GPIO,6-pin header,Connector_Generic:Conn_01x06,4,PB6,PB6,STM32 PB6,Spare GPIO — TIM4_CH1 / USART1_TX (alt),
+GPIO Header,J_GPIO,6-pin header,Connector_Generic:Conn_01x06,5,PB7,PB7,STM32 PB7,Spare GPIO — TIM4_CH2 / USART1_RX (alt),
+GPIO Header,J_GPIO,6-pin header,Connector_Generic:Conn_01x06,6,PA2,PA2,STM32 PA2,"Spare GPIO — USART2_TX / ADC1_IN2; future servo bus TX",
+,,,,,,,,,
+=== TEST POINTS ===,,,,,,,,,
+Test Point,TP1,Through-hole loop,TestPoint:TestPoint,1,,VBAT_PROT,,Verify battery voltage (post-protection),
+Test Point,TP2,Through-hole loop,TestPoint:TestPoint,1,,5V_BUCK,,Verify buck output (pre-shunt),
+Test Point,TP3_5V,Through-hole loop,TestPoint:TestPoint,1,,5V_RAIL,,Verify post-shunt rail,
+Test Point,TP3,Through-hole loop,TestPoint:TestPoint,1,,3V3_RAIL,,Verify LDO output,
+Test Point,TP4,Through-hole loop,TestPoint:TestPoint,1,,GND,,Ground probe reference,
+Test Point,TP5,SMD pad,TestPoint:TestPoint_SMD,1,,I2C_SCL,,Bus debug,
+Test Point,TP6,SMD pad,TestPoint:TestPoint_SMD,1,,I2C_SDA,,Bus debug,
+Test Point,TP7,SMD pad,TestPoint:TestPoint_SMD,1,,UART_TX,,Pi comms debug,
+Test Point,TP8,SMD pad,TestPoint:TestPoint_SMD,1,,UART_RX,,Pi comms debug,
+Test Point,TP9,SMD pad,TestPoint:TestPoint_SMD,1,,ADC_VOUT,,Analog showcase output,
+Test Point,TP10,SMD pad,TestPoint:TestPoint_SMD,1,,SENSE_HI,,Kelvin sense probing,
+Test Point,TP11,SMD pad,TestPoint:TestPoint_SMD,1,,SENSE_LO,,Kelvin sense probing,
+,,,,,,,,,
+=== STATUS LEDs ===,,,,,,,,,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PC6,LED Heartbeat,LED_HB,R_LED1 pin 1,GPIO_OUT; 1 Hz toggle,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PC7,LED Telemetry,LED_TX,R_LED2 pin 1,GPIO_OUT; toggles on UART frame,
+MCU,U1,STM32F411RET6,MCU_ST_STM32F4:STM32F411RETx,PC8,LED Error,LED_ERR,R_LED3 pin 1,GPIO_OUT; asserted on fault,
+LED Resistor,R_LED1,470R 0805,Device:R,1,,LED_HB,STM32 PC6,,
+LED Resistor,R_LED1,470R 0805,Device:R,2,,LED1_A,D1 anode,,
+LED,D1,Green 0805,Device:LED,Anode,,LED1_A,R_LED1 pin 2,Heartbeat — green,
+LED,D1,Green 0805,Device:LED,Cathode,,GND,,,
+LED Resistor,R_LED2,470R 0805,Device:R,1,,LED_TX,STM32 PC7,,
+LED Resistor,R_LED2,470R 0805,Device:R,2,,LED2_A,D2 anode,,
+LED,D2,Yellow 0805,Device:LED,Anode,,LED2_A,R_LED2 pin 2,Telemetry activity — yellow,
+LED,D2,Yellow 0805,Device:LED,Cathode,,GND,,,
+LED Resistor,R_LED3,470R 0805,Device:R,1,,LED_ERR,STM32 PC8,,
+LED Resistor,R_LED3,470R 0805,Device:R,2,,LED3_A,D3 anode,,
+LED,D3,Red 0805,Device:LED,Anode,,LED3_A,R_LED3 pin 2,Error / fault — red,
+LED,D3,Red 0805,Device:LED,Cathode,,GND,,,
+Power LED,R_LED_PWR,470R 0805,Device:R,1,,3V3_RAIL,,Always-on power indicator,
+Power LED,R_LED_PWR,470R 0805,Device:R,2,,LED_PWR_A,D_PWR anode,,
+Power LED,D_PWR,Green 0805,Device:LED,Anode,,LED_PWR_A,R_LED_PWR pin 2,Power-on indicator (not GPIO-controlled),
+Power LED,D_PWR,Green 0805,Device:LED,Cathode,,GND,,,
+,,,,,,,,,
+=== Pi 5V OUTPUT HEADER ===,,,,,,,,,
+Pi Header,J_PI,2-pin header,Connector_Generic:Conn_01x02,1,5V,5V_RAIL,WSK2512 pin 4 (I1),Pi 5V supply — full load current crosses shunt,
+Pi Header,J_PI,2-pin header,Connector_Generic:Conn_01x02,2,GND,GND,,Common ground,
+,,,,,,,,,
+=== I2C ADDRESS MAP ===,,,,,,,,,
+Device,Address (7-bit hex),Address Pins,,,,,,
+MPU9250,0x68,AD0 = GND,,,,,,
+BME280,0x76,SDO = GND,,,,,,
+INA226,0x40,"A0 = GND, A1 = GND",,,,,,
+SSD1306 OLED,0x3C,SA0 (off-board),,,,,,No conflict
+,,,,,,,,,
+=== NET SUMMARY ===,,,,,,,,,
+Net Name,Type,Voltage,Description,,,,,
+VBAT_IN,Power,7.4-12V,Raw battery input — before PTC fuse; TVS clamped (SMBJ12CA),,,,,
+VBAT_FUSED,Power,7.4-12V,After PTC fuse — before reverse-polarity FET,,,,,
+VBAT_PROT,Power,7.4-12V,After FET — protected battery voltage to buck converter,,,,,
+BOOT,Power,—,TPS5430 bootstrap — floats above SW_NODE,,,,,
+SW_NODE,Power,switching,TPS5430 switch node — fast dV/dt — to inductor L1,,,,,
+FB_5V,Analog,~1.221V,TPS5430 feedback node — resistor divider from 5V output (VSENSE = VREF = 1.221V at regulation),,,,,
+5V_BUCK,Power,5.0V,Buck converter output — regulated 5V — to shunt + bypass jumper,,,,,
+5V_RAIL,Power,~5.0V,After shunt — main 5V distribution — Pi + LDO (via FB2) + HC-SR04,,,,,
+5V_LDO_IN,Power,~5.0V,After ferrite bead FB2 — clean 5V to LDO only,,,,,
+3V3_RAIL,Power,3.3V,LDO output — STM32 + sensors + op-amp,,,,,
+VDDA_FILT,Power,3.3V,Filtered analog supply — STM32 VDDA only,,,,,
+GND,Power,0V,Common ground — L2 plane,,,,,
+SENSE_HI,Analog,~5V,Kelvin sense high side (WSK2512 E2) — to INA226 IN+ and OPA333 NI path,,,,,
+SENSE_LO,Analog,~5V,Kelvin sense low side (WSK2512 E1) — to INA226 IN- and OPA333 INV path,,,,,
+INA_ALERT,Digital,3.3V,INA226 over-current alert — open-drain with 10k pull-up — STM32 PB0 EXTI,,,,,
+IMU_INT,Digital,3.3V,MPU9250 data-ready interrupt — open-drain with 10k pull-up — STM32 PB1 EXTI,,,,,
+I2C_SCL,Digital,3.3V,I2C clock bus — 4.7k pull-up,,,,,
+I2C_SDA,Digital,3.3V,I2C data bus — 4.7k pull-up,,,,,
+UART_TX,Digital,3.3V,STM32 TX → Pi RX,,,,,
+UART_RX,Digital,3.3V,Pi TX → STM32 RX,,,,,
+SWDIO,Digital,3.3V,SWD data,,,,,
+SWCLK,Digital,3.3V,SWD clock,,,,,
+NRST,Digital,3.3V,Active-low reset,,,,,
+BOOT0,Digital,3.3V/GND,Boot mode select,,,,,
+HSE_IN,Analog,—,Crystal oscillator input,,,,,
+HSE_OUT,Analog,—,Crystal oscillator output,,,,,
+OPA_OUT,Analog,0-3V,OPA333 output — current-proportional voltage,,,,,
+ADC_VOUT,Analog,0-3V,Filtered OPA333 output → STM32 PA0,,,,,
+ADC_VREF,Analog,1.65V,Reference voltage divider → STM32 PA1,,,,,
+TRIG,Digital,3.3V,HC-SR04 trigger pulse,,,,,
+ECHO_5V,Digital,5V,HC-SR04 echo (raw 5V),,,,,
+ECHO_3V3,Digital,3.3V,HC-SR04 echo (level-shifted) — clamped by BAT54 to 3V3,,,,,
+SWO,Digital,3.3V,Serial Wire Output — STM32 PB3 to SWD header pin 6 — ITM trace,,,,,
+Q1_GATE,Analog,0V (DC),Reverse-polarity FET gate node — 100k to GND for ringing damping,,,,,
+JP_OPA4_OUT,Analog,0-3V,OPA333 output after isolation jumper JP_OPA4 — feeds R_FILT,,,,,
+,,,,,,,,,
+=== DECOUPLING CAPACITOR SUMMARY ===,,,,,,,,,
+Location,Value,Package,Quantity,Notes,,,,
+Each STM32 VDD pin,100nF X7R,0805,4,"One per VDD pin (pins 19,32,48,64)",,,,
+STM32 VDD bulk,10uF X5R,1210,1,Shared near cluster of VDD pins,,,,
+STM32 VBAT,100nF X7R,0805,1,,,,,
+STM32 VCAP_1,4.7uF X5R,0805,1,Internal regulator — NOT 3V3,,,,
+STM32 VDDA,1uF + 100nF,0805,2,After ferrite bead FB1,,,,
+MCP1700 input,1uF + 100nF,0805,2,"Close to VIN pin — AFTER FB2, at LDO pin",,,,
+MCP1700 output,100nF + 10uF,0805/1210,2,Close to VOUT pin,,,,
+MPU9250 VDD,100nF X7R,0805,1,,,,,
+MPU9250 VDDIO,100nF X7R,0805,1,,,,,
+MPU9250 REGOUT,100nF X7R,0805,1,Internal regulator output,,,,
+BME280 VDD,100nF X7R,0805,1,,,,,
+BME280 VDDIO,100nF X7R,0805,1,,,,,
+INA226 VS,100nF X7R,0805,1,,,,,
+OPA333 V+,100nF + 10uF,0805/1210,2,Close to pin 7,,,,
+5V_RAIL bulk,100uF 10V,Through-hole electrolytic,1,Near J_PI — Pi boot inrush dampening,,,,
+,,,,,,,,,
+=== MOUNTING HOLES ===,,,,,,,,,
+Location,Ref,Type,Quantity,Notes,,,,
+Corners (4x),H1-H4,M3 plated,4,Connect pad to GND or leave floating,,,,

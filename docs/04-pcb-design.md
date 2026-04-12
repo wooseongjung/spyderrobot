@@ -206,6 +206,7 @@ The custom board sits **in the Pi 5 V power path** ([ADR-0013](10-design-decisio
 - The full 2–5 A Pi 5 current crosses the shunt, giving the analog showcase a meaningful current range to measure.
 - Servo current is **not** in this path — PCA9685 is fed directly from the buck (ADR-0002).
 - The `0 Ω bypass jumper` across the (FET + shunt) series block is the Phase 4 bring-up safety net mandated by ADR-0013: cut only after the protection block is validated.
+- **JP1 layout rule:** the bypass trace must be **short and wide** (≥ 1 mm / 40 mil, matching the main 5 V power pour width). The Q1 + R_SHUNT series path is ~32 mΩ (12 mΩ Rds(on) + 20 mΩ shunt); a long thin JP1 trace could exceed this and defeat the bypass. When JP1 is the sole power path (Phase 1–3, Q1 not yet validated), it carries the full load current (up to 3 A).
 - The 3.3 V LDO supplies only the on-board STM32 + sensors (~50 mA peak); the Pi has its own internal regulators on the 5 V → 3.3 V/1.8 V/etc. path.
 
 ## Layer stack — locked: 4-layer SIG / GND / PWR / SIG
