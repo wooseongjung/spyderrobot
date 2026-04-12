@@ -67,28 +67,42 @@ Custom MCU board specification. This is the **main engineering deliverable** of 
 **Topology.**
 
 ```
-                     R_SHUNT  (Kelvin-sensed)
-     5V_RAIL ──────[ = = = ]────────────► 5V (to load)
-                    │     │
-                    │     │
-                   R1     R1          (matched, 0.1 % — gain-setting high side)
-                    │     │
-                    ├─────┼───── V+ ──┐
-                    │     │           │
-                    R2    R2          │  rail-to-rail op-amp
-                    │     │           │  (single 3.3 V supply)
-                    │     │           │
-                   GND   GND ── V− ───┘
-                                      │
-                                    V_OUT ──► STM32 ADC
+              WSK2512  (4-terminal Kelvin shunt, diagonal pad arrangement)
+              Pin layout (top view):    I2 ←──────── E1
+                                        E2 ──────────► I1
+
+     5V_RAIL ─────► I2 (current in, pad 1)          I1 (current out, pad 4) ──► 5V_LOAD
+                    E2 (sense+, pad 2)               E1 (sense−, pad 3)
+                         │                                │
+                         ├────── branch ──────────────────┤
+                         │                │               │
+                    ┌────┘        ┌───────┘       ┌───────┘
+                    ▼             ▼               ▼
+                  INA226       OPA333           INA226
+                   IN+         sense+            IN−       ◄── I²C path
+                               sense−
+                                 │
+                                 ▼
+                   R1           R1    (matched, 0.1 % — gain-setting high side)
+                    │            │
+                    ├────────────┼────── V+ ──┐
+                    │            │            │
+                   R2           R2            │  OPA333 (SOIC-8, ADR-0014)
+                    │            │            │  zero-drift, single 3.3 V supply
+                    │            │            │
+                   GND          GND ── V− ────┘
+                                              │
+                                            V_OUT ──► STM32 ADC
 ```
 
+The WSK2512 has current (I1, I2) and sense (E1, E2) pads on **opposite diagonal corners** — not inline like the WSLP. Both INA226 and the OPA333 difference amplifier tap the **same sense pair** (E1, E2). The branch happens as physically close to the sense pads as the layout allows so the two downstream devices see geometrically identical Kelvin taps — this is what makes the residual comparison apples-to-apples (preserved from ADR-0011).
+
 - **Topology: classic difference amplifier** (4-resistor instrumentation-style). Matched pairs `R1` and `R2` set the gain `G = R2/R1`. Output referred to GND for a single-supply op-amp.
-- **Input: true Kelvin sense** — two separate traces leave the shunt pads and route as a tight differential pair all the way to the op-amp inputs. No shared return with power current. This is the single most important layout rule for the whole block.
-- **Shunt:** `R_SHUNT` = **20 mΩ, 1 %, 2 W, 2512** (Vishay WSL2512 family). Locked by [ADR-0013](10-design-decisions.md#adr-0013--custom-board-sits-in-the-pi-5-v-power-path-not-the-servo-rail), which fixes the shunt's expected current range to the Pi 5 V rail (2–3 A typical, 5 A peak), not the servo rail. Dissipation at 5 A full scale: `5² × 0.02 = 0.5 W` (25 % of 2 W rating).
+- **Input: true Kelvin sense, enforced by the part.** The shunt is a **4-terminal Kelvin** package (Vishay WSK series, [ADR-0015](10-design-decisions.md#adr-0015--wsk2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013)) — two diagonal "current" pads (I1, I2) carry the load current, two opposite-corner "voltage" pads (E1, E2) tap the voltage drop directly across the resistive element. The Kelvin commitment is in the part geometry, not in the layout. The shared sense pair branches to both INA226 and OPA333 inputs at the sense pads.
+- **Shunt:** `R_SHUNT` = **20 mΩ, 1 %, 1 W, 2512, 4-terminal Kelvin** (Vishay **WSK2512R0200FEA**). Locked by [ADR-0013](10-design-decisions.md#adr-0013--custom-board-sits-in-the-pi-5-v-power-path-not-the-servo-rail) for the topology, refined by [ADR-0015](10-design-decisions.md#adr-0015--wsk2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013) for the part. Pi 5 V rail expected current 2–3 A typical, 5 A peak. Dissipation at 5 A full scale: `5² × 0.02 = 0.5 W` (50 % of 1 W rating, ample headroom). KiCad: symbol `Device:R_Shunt`, footprint `Resistor_SMD:R_Shunt_Vishay_WSK2512_6332Metric_T1.19mm`.
 - **Gain:** G = **30** (R1 = 1 kΩ, R2 = 30 kΩ, 0.1 % thin-film matched pairs). With 20 mΩ shunt: `0.6 V/A` at the op-amp output. **Full-scale current at the 3.0 V ADC headroom limit = 5.0 A** (matches the Pi 5 boot/USB-host peak). ADC LSB at 12-bit, 3.3 V V_ref: `0.806 mV / (30 × 20 mΩ) ≈ 1.34 mA / LSB`. The earlier `G ≈ 50` placeholder is superseded by this calculation; see ADR-0013 for the full derivation.
 
-**Op-amp selection — locked: OPA333AIDBVR** (TI, SOT-23-5, single, zero-drift chopper). See [ADR-0010](10-design-decisions.md#adr-0010--opa333-as-the-analog-showcase-op-amp) for the full trade-off. Headline numbers at G = 30:
+**Op-amp selection — locked: OPA333AID** (TI, **SOIC-8**, single, zero-drift chopper). See [ADR-0010](10-design-decisions.md#adr-0010--opa333-as-the-analog-showcase-op-amp) for the electrical trade-off and [ADR-0014](10-design-decisions.md#adr-0014--opa333-package-deviates-to-soic-8-for-v1-build-follow-up-to-adr-0010) for the package deviation from the originally-specified SOT-23-5. Same die, easier hand-assembly and bench probing. Headline numbers at G = 30:
 - **V_os 10 µV** → 300 µV output offset → **0.5 mA** static current offset (under the INA226 LSB at default PGA, so the op-amp does not bound the residual).
 - **TCV_os 50 nV/°C** → ≈ 0.1 mA drift over a 0–40 °C bench sweep.
 - **GBW 350 kHz**, ~35 000× the 10 Hz sample rate — bandwidth is not the binding constraint.
@@ -107,11 +121,12 @@ With `tol = 0.1 %` (matched 0.1 % thin-film) and `G = 30` (locked by ADR-0013): 
 **Bandwidth / filter.** A single-pole RC low-pass at the op-amp output (`f_c` ≈ 100 Hz — well above the 10 Hz sample rate, well below any switching noise) both limits aliasing into the STM32 ADC and bounds the measurement bandwidth. `R_filt` sits in series with the ADC input and forms the pole with a small COG cap to GND.
 
 **Routing rules (non-negotiable).**
-1. Kelvin-sense traces leave the shunt from the pad centre, not the pad edge. They route as a tight differential pair, equal length, over a solid reference.
-2. The shunt is placed on the load side of the reverse-polarity FET. **The INA226 and the discrete block share this single shunt** (locked by [ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase)). Two independent Kelvin differential pairs leave the shunt pads — one to the INA226 inputs, one to the OPA333 inputs — so the residual is purely topology error with zero current-path mismatch.
-3. Op-amp supply pin decoupled with 100 nF directly at the pin, 10 µF bulk within 10 mm.
-4. Output filter cap referenced to the same ground star point as the op-amp V− rail.
-5. `R1`/`R2` matched pairs placed symmetrically and as close together as routing allows.
+1. The shunt's **sense pair branches happen as close to the WSK2512 sense pads as physically possible**, with equal trace lengths from the branch point to the INA226 inputs and to the OPA333 inputs. The Kelvin connection itself is enforced by the part geometry ([ADR-0015](10-design-decisions.md#adr-0015--wsk2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013)) — the layout's job is to preserve symmetry between the two downstream devices, not to create the Kelvin tap.
+2. The shunt is placed on the load side of the reverse-polarity FET. **The INA226 and the discrete block share this single shunt** (locked by [ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase)). Both devices tap the same sense pair at the same physical point, so the residual is purely topology error with zero current-path mismatch.
+3. Sense pair routes as a tight differential pair over a solid GND reference (L2), equal length, no via-stitched gaps.
+4. Op-amp supply pin decoupled with 100 nF directly at the pin, 10 µF bulk within 10 mm.
+5. Output filter cap referenced to the same ground star point as the op-amp V− rail.
+6. `R1`/`R2` matched pairs placed symmetrically and as close together as routing allows.
 
 **Solder-jumper fallback.** The block's input, output, and supply are each brought to 0 Ω solder jumpers on the top layer, so the entire block can be depopulated if it is the root cause of any Phase 4 bring-up issue. **The analog showcase block must NOT be able to gate the Phase 4 exit criterion.**
 
@@ -158,30 +173,33 @@ Paper pin budget. To be validated in CubeMX against the Phase 2 NUCLEO-F411RE be
 
 ## Power tree on the board
 
-The custom board sits **in the Pi 5 V power path** ([ADR-0013](10-design-decisions.md#adr-0013--custom-board-sits-in-the-pi-5-v-power-path-not-the-servo-rail)) and uses a **single shared shunt** for both the INA226 and the discrete showcase block ([ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase)).
+The custom board sits **in the Pi 5 V power path** ([ADR-0013](10-design-decisions.md#adr-0013--custom-board-sits-in-the-pi-5-v-power-path-not-the-servo-rail)) and uses a **single shared 4-terminal Kelvin shunt** for both the INA226 and the discrete showcase block ([ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase) + [ADR-0015](10-design-decisions.md#adr-0015--wsk2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013)).
 
 ```
                   ┌── 0Ω bypass jumper (cut after Phase 4 protection-block validation) ──┐
                   │                                                                        │
-5V_IN ──┬─────────┴─[ P-FET ]──[ 20 mΩ shunt ]──┬──────────────┬─────────────────────────┴──── 5V_RAIL ──┬── Pi 5 (40-pin header, 5V/GND)
-        │           reverse-pol      │           │              │                                          │
-        │           protection       │           │              │                                          ├── HC-SR04 (5 V VCC)
-        │                            │           │              │                                          │
-        │                          (Kelvin)  (Kelvin)            │                                          └── LDO (MCP1700-3302) ── 3V3_RAIL ──┬── STM32F411
-        │                            │           │              │                                                                                ├── MPU9250
-        │                            ▼           ▼              │                                                                                ├── BME280
-        │                       INA226        OPA333 + R1/R2    │                                                                                ├── INA226 V_S
-        │                          │           diff amp         │                                                                                └── OPA333 V+
-        │                          │              │             │
-        │                          │              ▼             │
-        │                          │        ADC1_IN0 (V_OUT)    │
-        │                          │        ADC1_IN1 (V_REF)    │
-        │                          │              │             │
-        │                          ▼              ▼             │
-        │                       I²C1 SDA/SCL ◄────┘             │
-        └────────────────────────────────────────────────────────┘
-                                       (GND return — inner GND plane, ADR-0012)
+5V_IN ──┬─────────┴─[ P-FET ]──[ WSK2512 20 mΩ ]──┬─────────────────────────────────────┴──── 5V_RAIL ──┬── Pi 5 (40-pin header, 5V/GND)
+        │           reverse-pol    I2        I1    │                                                       │
+        │           protection     E2        E1    │                                                       ├── HC-SR04 (5 V VCC)
+        │                          │         │     │                                                       │
+        │                          ├──┬──────┼──┬──┤                                                       └── LDO (MCP1700-3302) ── 3V3_RAIL ──┬── STM32F411
+        │                          │  │      │  │  │                                                                                             ├── MPU9250
+        │                          ▼  ▼      ▼  ▼  │                                                                                             ├── BME280
+        │                       INA226     OPA333  │                                                                                             ├── INA226 V_S
+        │                       IN+/IN−    + R1/R2 │                                                                                             └── OPA333 V+ (SOIC-8)
+        │                          │      diff amp │
+        │                          │         │     │
+        │                          │         ▼     │
+        │                          │   ADC1_IN0 (V_OUT)
+        │                          │   ADC1_IN1 (V_REF)
+        │                          │         │     │
+        │                          ▼         ▼     │
+        │                       I²C1 SDA/SCL ◄─────┘
+        └─────────────────────────────────────────────
+                                       (GND return — inner GND plane L2, ADR-0012)
 ```
+
+`I1`/`I2` are the WSK2512 current pads (force, load current); `E1`/`E2` are the voltage sense pads (Kelvin tap). Current and sense pads sit on **opposite diagonal corners** per the WSK2512 package. The single sense pair branches to **both** INA226 inputs and **both** OPA333 inputs at the sense pads, so the residual comparison sees a geometrically identical Kelvin tap on both sides ([ADR-0011](10-design-decisions.md#adr-0011--shared-shunt-between-ina226-and-the-discrete-showcase) topology, [ADR-0015](10-design-decisions.md#adr-0015--wsk2512-4-terminal-kelvin-shunt-supersedes-the-wsl2512-part-choice-in-adr-0011--0013) part).
 
 **Key features captured by this diagram:**
 - 5V_IN comes from an external buck on the battery side (out of scope for v1 PCB; lives on the order tracker in `docs/03-hardware-bom.md`).

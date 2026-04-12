@@ -203,6 +203,56 @@ Secondary benefit: the Pi + board 5 V distribution path (ADR-0013) gets a contin
 
 ---
 
+## ADR-0014 — OPA333 package deviates to SOIC-8 for v1 build (follow-up to ADR-0010)
+**Date:** 2026-04-10
+**Decision:** The v1 build uses **OPA333AID** (SOIC-8, `OPA333xxD` symbol in KiCad's `Amplifier_Operational` library) instead of **OPA333AIDBVR** (SOT-23-5, `OPA333xxDBV`) as specified in ADR-0010. The die, electrical parameters, and the entire ADR-0010 trade-off study are unchanged — only the package changes.
+**Context:** During schematic capture in KiCad, the SOIC-8 variant was placed first. Rather than replace it with the SOT-23-5 variant to match ADR-0010 strictly, this ADR records the deviation as a deliberate v1 build choice and updates the BOM. The project rule "never edit historical entries — append a follow-up ADR if a decision changes" applies here: ADR-0010 stays intact, this ADR is the addendum.
+**Alternatives:**
+1. **OPA333AID (SOIC-8) (chosen).** 1.27 mm pin pitch, 4.9 × 3.9 mm body, 8 leads. Trivial to hand-solder with a regular fine-tip iron. Easy to scope-probe during the ADR-0008 bench validation sweep — every pin is reachable with a standard 0.8 mm scope hook.
+2. **OPA333AIDBVR (SOT-23-5)** (the original ADR-0010 pick). 0.95 mm pitch, 1.6 × 2.9 mm body, 5 leads. Smaller, more "production-grade" optics, but harder to hand-solder for a single prototype, harder to probe during bench validation, and the pad spacing is tight enough that a slipped iron tip can bridge two pins.
+3. **OPA333AIDCK (SC-70-5).** 0.65 mm pitch. Rejected — too small for hand work.
+**Rationale:** The portfolio signal from this op-amp comes from the **bench measurements** (residual vs INA226, CMRR sweep, 0 A offset, common-mode injection test) recorded in `docs/09-test-and-validation.md`, not from the package size. No interview-relevant artifact (schematic photo, PCB photo, validation plot) makes the package distinguishable. SOIC-8 is the strictly easier ergonomics choice for a hand-assembled prototype, and the easier the chip is to probe during bench validation, the more credible the validation data ends up being.
+
+**BOM impact:**
+- Manufacturer Part Number: `OPA333AID` (was `OPA333AIDBVR`)
+- KiCad symbol: `Amplifier_Operational:OPA333xxD` (was `OPA333xxDBV`)
+- Footprint to assign at link time: `Package_SO:SOIC-8_3.9x4.9mm_P1.27mm` (was `Package_TO_SOT_SMD:SOT-23-5_HandSoldering`)
+- LCSC stock and pricing: typically equivalent or marginally cheaper for SOIC-8 vs SOT-23-5 of the same die.
+
+**ADR-0010 stays the source of truth on the op-amp electrical pick** (zero-drift chopper, V_os 10 µV, OPA333 family) — this ADR only changes the package. If a future revision chooses a different op-amp (different family entirely), that's a new ADR; this one is strictly a packaging follow-up.
+
+---
+
+## ADR-0015 — WSK2512 4-terminal Kelvin shunt (supersedes the WSL2512 part choice in ADR-0011 / 0013)
+**Date:** 2026-04-10
+**Decision:** Replace the 2-terminal **WSL2512R0200FEA** shunt specified in ADR-0011 and ADR-0013 with the 4-terminal Kelvin **WSK2512R0200FEA** (Vishay WSK series, 1 W, 4-terminal force/sense). The Kelvin sense topology now lives in the *part itself*, not just in the layout. Resistance value (20 mΩ), tolerance (1 %), gain (G = 30), full-scale current (5 A), and ADC LSB (~1.34 mA) are all unchanged.
+**Context:** ADR-0011 committed to a shared Kelvin shunt and ADR-0013 picked the Vishay WSL2512 (2-terminal) part. ADR-0011's "Routing rules" item #1 then leaned heavily on layout to *achieve* a Kelvin connection — sense traces leaving the pad centre, tight differential pair, etc. That works, but it puts the Kelvin commitment at the layout level rather than the part-selection level.
+
+The Vishay **WSK** series is the purpose-built **4-terminal Kelvin** current-sense shunt in the 2512 package: two diagonal "current" pads (I1, I2) carry the load current, and two opposite-corner "voltage" pads (E1, E2) tap the voltage drop directly across the resistive element. The Kelvin connection is enforced by the part's geometry. *(Note: the WSLP series was initially considered but is actually a 2-terminal high-power variant — its "typical sensing traces" are PCB layout recommendations, not separate pads, and WSLP2512 maxes out at 10 mΩ which is below our 20 mΩ target. The WSK series is the correct 4-terminal Kelvin family.)*
+**Alternatives:**
+1. **Stay with WSL2512 (2-terminal) + layout-Kelvin** (the ADR-0013 pick). Cheaper, single-source, but the Kelvin commitment is invisible at every level above the PCB layout. An interviewer reading the schematic and BOM sees a generic 2-terminal resistor and has to take it on faith that the layout did the right thing.
+2. **WSK2512R0200FEA (4-terminal Kelvin, 1 W) (chosen).** Kelvin connection enforced at the part level. Visible in the schematic (4 nets per shunt), the BOM (Kelvin part number), and the footprint (4 pads in the diagonal Kelvin land pattern). 1 W rating gives 2× headroom at the 5 A full-scale dissipation (0.5 W). Resistance range 0.0005–0.2 Ω at ±1 % — 20 mΩ is comfortably within range. TCR ±35 ppm/°C for the 5–200 mΩ band.
+3. **WSLP2512** (Vishay high-power 2-terminal). NOT 4-terminal despite "sensing traces" in the drawing — those are PCB layout guidelines, not separate pads. Max resistance 10 mΩ — cannot reach 20 mΩ. Rejected.
+4. **WSLT2512** (Vishay "trim" 4-terminal variant). Lower power rating, less common stock, no functional advantage over WSK. Rejected.
+5. **A larger package (e.g. WSK3921).** More headroom, but 2× the board area for no benefit at the 5 A peak. Rejected.
+**Rationale:** ADR-0008 exists to be a **falsifiable analog showcase**. Picking a 4-terminal Kelvin part makes the Kelvin commitment visible at every level — schematic (4-pin symbol with 2 force + 2 sense nets), BOM (part number explicitly says "4-Terminal"), footprint (4 pads in the diagonal Kelvin land pattern), and bench data. This is the level at which an analog interviewer reads "this person understands Kelvin sensing as a part-selection decision, not just as something they read in a tutorial about layout."
+
+The 1 W rating at 0.5 W full-scale dissipation gives 2× thermal headroom — comfortable, with nothing to worry about even at the Pi 5 boot peak. Cost delta vs WSL2512 is roughly $2–3 per shunt vs $0.50–1.00, which is irrelevant against the rest of the BOM.
+
+**Compatibility with ADR-0011 (shared shunt):** The WSK2512 sense pads (E1, E2) are on opposite corners from the current pads (I1, I2) in a diagonal arrangement. ADR-0011 commits to a shared shunt for both INA226 and OPA333. The shared topology still works: at each sense pad, the single sense net branches to **two** destinations — one branch to the INA226 input, one branch to the OPA333 input — with the branch happening as physically close to the sense pad as the layout allows. Both downstream devices end up looking at the same Kelvin tap point. ADR-0011's "shared shunt is apples-to-apples by physics" property is preserved.
+
+**Implementation impact:**
+- **KiCad symbol:** use the built-in `Device:R_Shunt` — a 4-pin symbol described as "Shunt resistor with Kelvin connections." Pins 1 + 4 are current (force), pins 2 + 3 are voltage (sense). No custom symbol needed.
+- **KiCad footprint:** use the built-in `Resistor_SMD:R_Shunt_Vishay_WSK2512_6332Metric_T1.19mm` — the T = 1.19 mm variant covers the 5–200 mΩ resistance range. Pad dimensions match the Vishay datasheet (doc 30108) solder pad table exactly. No custom footprint needed.
+- **Schematic wiring:** 4 nets at the shunt, not 2. Force pin 1 → 5V_RAIL (from FET), force pin 4 → 5V_LOAD (to Pi/LDO), sense pin 2 and sense pin 3 fan out to INA226 (IN+/IN−) and OPA333 (V+/V−).
+- **Layout:** sense pads are on opposite corners from force pads (diagonal arrangement). ADR-0011's routing rules update — see `docs/04-pcb-design.md` § "Routing rules". Sense net branches happen close to the sense pads with equal trace lengths to both downstream devices.
+- **BOM cost:** WSK2512 is roughly 3× the WSL2512 unit price (~$2–3 vs ~$1). Negligible against the rest of the BOM.
+- **ADR-0011's layout-fallback caveat is no longer needed** — the Kelvin connection is in the part, not the layout. The `R_Shunt` symbol enforces 4 nets by construction.
+
+**ADR-0011 and ADR-0013 stay the source of truth on the *topology* (shared shunt, gain G = 30, full-scale 5 A, 20 mΩ value, etc.).** This ADR only swaps the *part* that implements that topology.
+
+---
+
 ## Template for new entries
 
 ```
