@@ -1,0 +1,98 @@
+Ref Des,Component,KiCad Library,KiCad Symbol (search this),Value / MPN,Qty,Notes
+,,,,,,
+=== MCU ===,,,,,,
+U1,STM32F411RET6,MCU_ST_STM32F4,STM32F411RETx,,1,Already placed
+,,,,,,
+=== POWER REGULATION ===,,,,,,
+U_LDO,MCP1700-3302E/TT,Regulator_Linear,MCP1700-3302E_SOT-23,MCP1700-3302E/TT,1,SOT-23-3; 3.3V LDO
+,,,,,,
+=== PROTECTION ===,,,,,,
+Q1,SiA457DJ (P-ch MOSFET),Transistor_FET,Q_PMOS_GSD,,1,"Generic P-MOS symbol; add MPN field = SiA457DJ. Assign PowerPAK footprint later"
+F1,PTC resettable fuse,Device,Polyfuse,6A,1,Or search 'Fuse' for standard fuse symbol
+,,,,,,
+=== SENSORS ===,,,,,,
+U_IMU,MPU-9250,Sensor_Motion,MPU-9250,,1,Already found per earlier session
+U_ENV,BME280,Sensor_Pressure,BME280,,1,Search 'BME280'
+U_INA,INA226,Analog_ADC,INA226,,1,VSSOP-10; search 'INA226'
+,,,,,,
+=== ANALOG SHOWCASE ===,,,,,,
+U_OPA,OPA333AID,Amplifier_Operational,OPA333xxD,,1,Already placed (SOIC-8 per ADR-0014)
+R_SHUNT,WSK2512R0200FEA,Device,R_Shunt,,1,"Already discussed — 4-pin Kelvin symbol, built-in"
+R1_NI,1k matched (NI path),Device,R,1k,1,0.1% thin-film
+R1_INV,1k matched (INV path),Device,R,1k,1,0.1% thin-film; matched pair with R1_NI
+R2_NI,30k matched (NI path),Device,R,30k,1,0.1% thin-film
+R2_INV,30k matched (INV path),Device,R,30k,1,0.1% thin-film; matched pair with R2_NI
+R_FILT,Output filter resistor,Device,R,10k,1,0805
+C_FILT,Output filter cap,Device,C,150nF,1,COG 0805
+R_REF1,Ref divider top,Device,R,10k,1,0805
+R_REF2,Ref divider bottom,Device,R,10k,1,0805
+,,,,,,
+=== CRYSTAL ===,,,,,,
+Y1,8 MHz HSE crystal,Device,Crystal,8MHz,1,HC-49S or 3225 SMD
+C_HSE1,Crystal load cap,Device,C,20pF,1,COG 0805
+C_HSE2,Crystal load cap,Device,C,20pF,1,COG 0805
+,,,,,,
+=== RESET / BOOT ===,,,,,,
+R_RST,Reset pull-up,Device,R,10k,1,0805
+C_RST,Reset filter cap,Device,C,100nF,1,X7R 0805
+SW_RST,Reset button,Switch,SW_Push,,1,Search 'SW_Push'
+JP_BOOT,Boot mode selector,Connector_Generic,Conn_01x03,,1,3-pin header; jumper selects GND or VDD
+,,,,,,
+=== CONNECTORS / HEADERS ===,,,,,,
+J_PWR,5V power input,Connector_Generic,Conn_01x02,,1,Search 'Conn_01x02'
+J_PI,Pi 5V output,Connector_Generic,Conn_01x02,,1,2-pin header to Pi 5V/GND
+J_UART,UART to Pi,Connector_Generic,Conn_01x04,,1,Search 'Conn_01x04' (TX/RX/GND/3V3)
+J_SWD,SWD debug header,Connector,Conn_ARM_SWD,,1,"Search 'SWD'; or use Conn_02x03 for generic 2x3 header"
+J_I2C,I2C breakout,Connector_Generic,Conn_01x04,,1,SCL/SDA/3V3/GND
+J_HCSR04,HC-SR04 header,Connector_Generic,Conn_01x04,,1,VCC/GND/TRIG/ECHO
+,,,,,,
+=== JUMPERS ===,,,,,,
+JP1,Bypass jumper (FET+shunt),Device,R,0,1,"0 ohm 0805; bridges protection block"
+JP_OPA,Analog block isolation (×3),Device,R,0,3,"0 ohm 0805; depopulate to isolate analog block"
+,,,,,,
+=== I2C PULL-UPS ===,,,,,,
+R_SCL,SCL pull-up,Device,R,4.7k,1,0805
+R_SDA,SDA pull-up,Device,R,4.7k,1,0805
+,,,,,,
+=== HC-SR04 LEVEL SHIFTER ===,,,,,,
+R_ECHO_TOP,Echo divider top,Device,R,1k,1,0805; 5V side
+R_ECHO_BOT,Echo divider bottom,Device,R,2k,1,0805; GND side; gives 3.33V at junction
+,,,,,,
+=== LEDs ===,,,,,,
+R_LED1,Heartbeat LED resistor,Device,R,470,1,0805
+R_LED2,Telemetry LED resistor,Device,R,470,1,0805
+R_LED3,Error LED resistor,Device,R,470,1,0805
+R_LED_PWR,Power LED resistor,Device,R,470,1,0805
+D1,Heartbeat LED,Device,LED,Green,1,0805
+D2,Telemetry LED,Device,LED,Yellow,1,0805
+D3,Error LED,Device,LED,Red,1,0805
+D_PWR,Power LED,Device,LED,Green,1,0805; always-on from 3V3
+,,,,,,
+=== FERRITE BEAD ===,,,,,,
+FB1,VDDA filter,Device,FerriteBead,,1,Search 'FerriteBead'; 600R @ 100MHz
+,,,,,,
+=== DECOUPLING CAPS ===,,,,,,
+C_VDD1,STM32 VDD decouple,Device,C,100nF,3,X7R 0805; one per VDD pin
+C_VDD_BULK,STM32 VDD bulk,Device,C,10uF,1,X5R 1210
+C_VBAT,STM32 VBAT decouple,Device,C,100nF,1,X7R 0805
+C_VCAP,STM32 VCAP_1,Device,C,4.7uF,1,X5R 0805; internal regulator — NOT 3V3
+C_VDDA1,STM32 VDDA filter,Device,C,1uF,1,After ferrite bead
+C_VDDA2,STM32 VDDA filter,Device,C,100nF,1,After ferrite bead
+C_LDO_IN1,MCP1700 input,Device,C,1uF,1,X5R 0805
+C_LDO_IN2,MCP1700 input,Device,C,100nF,1,X7R 0805
+C_LDO_OUT1,MCP1700 output,Device,C,100nF,1,X7R 0805
+C_LDO_OUT2,MCP1700 output,Device,C,10uF,1,X5R 1210
+C_IMU_VDD,MPU9250 VDD,Device,C,100nF,1,X7R 0805
+C_IMU_VDDIO,MPU9250 VDDIO,Device,C,100nF,1,X7R 0805
+C_IMU_REG,MPU9250 REGOUT,Device,C,100nF,1,X7R 0805
+C_ENV_VDD,BME280 VDD,Device,C,100nF,1,X7R 0805
+C_ENV_VDDIO,BME280 VDDIO,Device,C,100nF,1,X7R 0805
+C_INA_VS,INA226 VS,Device,C,100nF,1,X7R 0805
+C_OPA_VDD,OPA333 V+,Device,C,100nF,1,X7R 0805; close to pin 7
+C_OPA_BULK,OPA333 V+ bulk,Device,C,10uF,1,X5R 1210
+,,,,,,
+=== POWER SYMBOLS (virtual — no physical part) ===,,,,,,
+—,+5V power flag,power,+5V,,—,Place on 5V_RAIL net
+—,+3.3V power flag,power,+3.3V,,—,Place on 3V3_RAIL net
+—,GND power flag,power,GND,,—,Place on every GND connection
+—,PWR_FLAG,power,PWR_FLAG,,—,"Place on power input nets to avoid ERC warnings"
